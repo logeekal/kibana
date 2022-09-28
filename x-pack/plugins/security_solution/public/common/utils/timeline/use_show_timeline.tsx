@@ -5,8 +5,8 @@
  * 2.0.
  */
 
-import { useMemo } from 'react';
-import { matchPath, useLocation } from 'react-router-dom';
+import { useCallback, useMemo } from 'react';
+import { matchPath } from 'react-router-dom';
 
 import { getLinksWithHiddenTimeline } from '../../links';
 import { useIsGroupedNavigationEnabled } from '../../components/navigation/helpers';
@@ -40,7 +40,6 @@ const isTimelinePathVisible = (
 
 export const useShowTimeline = () => {
   const isGroupedNavigationEnabled = useIsGroupedNavigationEnabled();
-  const { pathname } = useLocation();
   const { indicesExist, dataViewId } = useSourcererDataView(SourcererScopeName.timeline);
   const userHasSecuritySolutionVisible = useKibana().services.application.capabilities.siem.show;
 
@@ -49,12 +48,15 @@ export const useShowTimeline = () => {
     [indicesExist, dataViewId, userHasSecuritySolutionVisible]
   );
 
-  const showTimeline = useMemo(() => {
-    if (!isTimelineAllowed) {
-      return false;
-    }
-    return isTimelinePathVisible(pathname, isGroupedNavigationEnabled);
-  }, [isTimelineAllowed, pathname, isGroupedNavigationEnabled]);
+  const isTimelineVisible = useCallback(
+    (path: string) => {
+      if (!isTimelineAllowed) {
+        return false;
+      }
+      return isTimelinePathVisible(path, isGroupedNavigationEnabled);
+    },
+    [isTimelineAllowed, isGroupedNavigationEnabled]
+  );
 
-  return [showTimeline];
+  return isTimelineVisible;
 };

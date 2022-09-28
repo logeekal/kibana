@@ -5,21 +5,22 @@
  * 2.0.
  */
 
-import { i18n } from '@kbn/i18n';
 import { useCallback, useEffect, useMemo } from 'react';
 import { useDispatch } from 'react-redux';
 import type { AppLeaveHandler } from '@kbn/core-application-browser';
 import { useHistory } from 'react-router-dom';
+import { APP_PATH, APP_ID } from '../../../../common/constants';
+import { useShowTimeline } from '../../utils/timeline/use_show_timeline';
+import { getTimelineShowStatusByIdSelector } from '../../../timelines/components/flyout/selectors';
+import { useDeepEqualSelector } from '../use_selector';
+import { timelineActions } from '../../../timelines/store/timeline';
 import type { TimelineId } from '../../../../common/types';
-import { TimelineStatus, TimelineTabs } from '../../../../common/types';
-import { timelineActions } from '../../store/timeline';
-import { useKibana } from '../../../common/lib/kibana';
-import { useDeepEqualSelector } from '../../../common/hooks/use_selector';
-import { getTimelineShowStatusByIdSelector } from '../flyout/selectors';
-import { getLinksWithHiddenTimeline } from '../../../common/links';
-
-// Issue with history.block
-// https://github.com/elastic/kibana/issues/132597
+import { TimelineTabs, TimelineStatus } from '../../../../common/types';
+import { useKibana } from '../../lib/kibana';
+import {
+  UNSAVED_TIMELINE_CHANGES_PROMPT,
+  UNSAVED_TIMELINE_CHANGES_TITLE,
+} from '../../translations';
 
 export const useTimelineSavePrompt = (
   timelineId: TimelineId,
@@ -27,20 +28,10 @@ export const useTimelineSavePrompt = (
 ) => {
   const dispatch = useDispatch();
 
-  const linksWithoutTimelines = getLinksWithHiddenTimeline();
-
-  const pathsWithoutTimelines = linksWithoutTimelines.map((link) => `/app/security${link.path}`);
+  const getIsTimelineVisible = useShowTimeline();
 
   const { overlays, application } = useKibana().services;
   const history = useHistory();
-
-  const prompt = i18n.translate('xpack.securitySolution.timeline.unsavedWorkMessage', {
-    defaultMessage: 'Leave Timeline with unsaved work?',
-  });
-
-  const title = i18n.translate('xpack.securitySolution.timeline.unsavedWorkTitle', {
-    defaultMessage: 'Unsaved changes',
-  });
 
   const getTimelineShowStatus = useMemo(() => getTimelineShowStatusByIdSelector(), []);
   const { status: timelineStatus, updated } = useDeepEqualSelector((state) =>
@@ -65,9 +56,10 @@ export const useTimelineSavePrompt = (
 
   useEffect(() => {
     const unblock = history.block((location) => {
+      const relativePath = location.pathname.replace(APP_PATH, '');
       async function confirmSaveTimeline() {
-        const confirmRes = await overlays?.openConfirm(prompt, {
-          title,
+        const confirmRes = await overlays?.openConfirm(UNSAVED_TIMELINE_CHANGES_PROMPT, {
+          title: UNSAVED_TIMELINE_CHANGES_TITLE,
           'data-test-subj': 'appLeaveConfirmModal',
         });
 
@@ -81,9 +73,8 @@ export const useTimelineSavePrompt = (
           showSaveTimelineModal();
         }
       }
-
       if (
-        pathsWithoutTimelines.includes(location.pathname) &&
+        !getIsTimelineVisible(relativePath) &&
         timelineStatus === TimelineStatus.draft &&
         updated != null
       ) {
@@ -99,25 +90,27 @@ export const useTimelineSavePrompt = (
     };
   }, [
     history,
+    getIsTimelineVisible,
     application,
     overlays,
     showSaveTimelineModal,
-    prompt,
-    title,
     timelineStatus,
     updated,
-    pathsWithoutTimelines,
   ]);
 
   useEffect(() => {
     onAppLeave((actions, nextAppId) => {
       // Confirm when the user has made any changes to a timeline
       if (
-        !(nextAppId ?? '').includes('securitySolution') &&
+        !(nextAppId ?? '').includes(APP_ID) &&
         timelineStatus === TimelineStatus.draft &&
         updated != null
       ) {
-        return actions.confirm(prompt, title, showSaveTimelineModal);
+        return actions.confirm(
+          UNSAVED_TIMELINE_CHANGES_PROMPT,
+          UNSAVED_TIMELINE_CHANGES_TITLE,
+          showSaveTimelineModal
+        );
       } else {
         return actions.default();
       }

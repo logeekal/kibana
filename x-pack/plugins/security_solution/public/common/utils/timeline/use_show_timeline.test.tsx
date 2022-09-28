@@ -12,6 +12,7 @@ import { links } from '../../links/app_links';
 import { useShowTimeline } from './use_show_timeline';
 
 const mockUseLocation = jest.fn().mockReturnValue({ pathname: '/overview' });
+
 jest.mock('react-router-dom', () => {
   const original = jest.requireActual('react-router-dom');
   return {
@@ -73,6 +74,13 @@ describe('use show timeline', () => {
       },
     });
   });
+
+  const PATHS = {
+    DUMMY: '/some/path',
+    RULE_CREATE: '/rules/create',
+    RULES: '/rules',
+    ADMIN_POLICY: '/administration/policy',
+  };
   describe('useIsGroupedNavigationEnabled false', () => {
     beforeAll(() => {
       mockedUseIsGroupedNavigationEnabled.mockReturnValue(false);
@@ -82,36 +90,33 @@ describe('use show timeline', () => {
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([true]);
+        const showTimeline = result.current(PATHS.DUMMY);
+        expect(showTimeline).toEqual(true);
       });
     });
 
     it('hides timeline for blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/rules/create' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([false]);
+        const showTimeline = result.current(PATHS.RULE_CREATE);
+        expect(showTimeline).toEqual(false);
       });
     });
     it('shows timeline for partial blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/rules' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([true]);
+        const showTimeline = result.current(PATHS.RULES);
+        expect(showTimeline).toEqual(true);
       });
     });
     it('hides timeline for sub blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/administration/policy' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([false]);
+        const showTimeline = result.current(PATHS.ADMIN_POLICY);
+        expect(showTimeline).toEqual(false);
       });
     });
   });
@@ -125,36 +130,33 @@ describe('use show timeline', () => {
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([true]);
+        const showTimeline = result.current(PATHS.DUMMY);
+        expect(showTimeline).toEqual(true);
       });
     });
 
     it('hides timeline for blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/rules/create' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([false]);
+        const showTimeline = result.current(PATHS.RULE_CREATE);
+        expect(showTimeline).toEqual(false);
       });
     });
     it('shows timeline for partial blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/rules' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([true]);
+        const showTimeline = result.current(PATHS.RULES);
+        expect(showTimeline).toEqual(true);
       });
     });
     it('hides timeline for sub blacklist routes', async () => {
-      mockUseLocation.mockReturnValueOnce({ pathname: '/administration/policy' });
       await act(async () => {
         const { result, waitForNextUpdate } = renderHook(() => useShowTimeline());
         await waitForNextUpdate();
-        const showTimeline = result.current;
-        expect(showTimeline).toEqual([false]);
+        const showTimeline = result.current(PATHS.ADMIN_POLICY);
+        expect(showTimeline).toEqual(false);
       });
     });
   });
@@ -163,19 +165,19 @@ describe('use show timeline', () => {
     it('should show timeline when indices exist', () => {
       mockUseSourcererDataView.mockReturnValueOnce({ indicesExist: true, dataViewId: 'test' });
       const { result } = renderHook(() => useShowTimeline());
-      expect(result.current).toEqual([true]);
+      expect(result.current(PATHS.DUMMY)).toEqual(true);
     });
 
     it('should show timeline when dataViewId is null', () => {
       mockUseSourcererDataView.mockReturnValueOnce({ indicesExist: false, dataViewId: null });
       const { result } = renderHook(() => useShowTimeline());
-      expect(result.current).toEqual([true]);
+      expect(result.current(PATHS.DUMMY)).toEqual(true);
     });
 
     it('should not show timeline when dataViewId is not null and indices does not exist', () => {
       mockUseSourcererDataView.mockReturnValueOnce({ indicesExist: false, dataViewId: 'test' });
       const { result } = renderHook(() => useShowTimeline());
-      expect(result.current).toEqual([false]);
+      expect(result.current(PATHS.DUMMY)).toEqual(false);
     });
   });
 
@@ -183,13 +185,13 @@ describe('use show timeline', () => {
     it('should show timeline when user has read capabilities', () => {
       mockSiemUserCanRead.mockReturnValueOnce(true);
       const { result } = renderHook(() => useShowTimeline());
-      expect(result.current).toEqual([true]);
+      expect(result.current(PATHS.DUMMY)).toEqual(true);
     });
 
     it('should not show timeline when user does not have read capabilities', () => {
       mockSiemUserCanRead.mockReturnValueOnce(false);
       const { result } = renderHook(() => useShowTimeline());
-      expect(result.current).toEqual([false]);
+      expect(result.current(PATHS.DUMMY)).toEqual(false);
     });
   });
 });

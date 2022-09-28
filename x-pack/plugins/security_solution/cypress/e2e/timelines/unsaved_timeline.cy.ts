@@ -37,6 +37,14 @@ describe('Save Timeline Prompts', () => {
   before(() => {
     cleanKibana();
     login();
+  });
+
+  beforeEach(() => {
+    visit(HOSTS_URL);
+    createNewTimeline();
+  });
+
+  afterEach(() => {
     /*
      * When timeline changes are pending, chrome would popup with
      * a confirm dialog stating that `you can lose unsaved changed.
@@ -46,11 +54,6 @@ describe('Save Timeline Prompts', () => {
     cy.window().then((win) => {
       win.onbeforeunload = null;
     });
-  });
-
-  beforeEach(() => {
-    visit(HOSTS_URL);
-    createNewTimeline();
   });
 
   it('unchanged & unsaved timeline should NOT prompt when user navigates away', () => {

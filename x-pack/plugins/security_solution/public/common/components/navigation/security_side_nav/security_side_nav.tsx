@@ -7,6 +7,7 @@
 
 import React, { useMemo, useCallback } from 'react';
 import { EuiHorizontalRule, EuiListGroupItem, EuiLoadingSpinner } from '@elastic/eui';
+import { useLocation } from 'react-router-dom';
 import { SecurityPageName } from '../../../../app/types';
 import { getAncestorLinksInfo } from '../../../links';
 import { useRouteSpy } from '../../../utils/route/use_route_spy';
@@ -151,8 +152,14 @@ export const SecuritySideNav: React.FC = () => {
   const [items, footerItems] = useSideNavItems();
   const selectedId = useSelectedId();
 
+  const { pathname } = useLocation();
   const isPolicySettingsVisible = useIsPolicySettingsBarVisible();
-  const [isTimelineBottomBarVisible] = useShowTimeline();
+  const getIsTimelineBottomBarVisible = useShowTimeline();
+
+  const isTimelineBottomBarVisible = useMemo(
+    () => getIsTimelineBottomBarVisible(pathname),
+    [pathname, getIsTimelineBottomBarVisible]
+  );
   const bottomOffset =
     isTimelineBottomBarVisible || isPolicySettingsVisible ? bottomNavOffset : undefined;
 

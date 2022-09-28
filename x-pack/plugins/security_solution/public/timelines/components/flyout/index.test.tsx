@@ -13,7 +13,6 @@ import '../../../common/mock/react_beautiful_dnd';
 import { TestProviders } from '../../../common/mock';
 import { TimelineId } from '../../../../common/types/timeline';
 import * as timelineActions from '../../store/timeline/actions';
-
 import { Flyout } from '.';
 
 const mockDispatch = jest.fn();
@@ -29,6 +28,8 @@ jest.mock('react-redux', () => {
 jest.mock('../timeline', () => ({
   StatefulTimeline: () => <div />,
 }));
+
+jest.mock('../../../common/hooks/timeline/use_timeline_save_prompt');
 
 describe('Flyout', () => {
   const props = {

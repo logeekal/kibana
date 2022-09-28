@@ -11,6 +11,7 @@ import { EuiThemeProvider, useEuiTheme } from '@elastic/eui';
 import { IS_DRAGGING_CLASS_NAME } from '@kbn/securitysolution-t-grid';
 import { KibanaPageTemplate } from '@kbn/shared-ux-page-kibana-template';
 import type { KibanaPageTemplateProps } from '@kbn/shared-ux-page-kibana-template';
+import { useLocation } from 'react-router-dom';
 import { useSecuritySolutionNavigation } from '../../../common/components/navigation/use_security_solution_navigation';
 import { TimelineId } from '../../../../common/types/timeline';
 import { getTimelineShowStatusByIdSelector } from '../../../timelines/components/flyout/selectors';
@@ -58,11 +59,17 @@ export const SecuritySolutionTemplateWrapper: React.FC<Omit<KibanaPageTemplatePr
   React.memo(({ children, ...rest }) => {
     const solutionNav = useSecuritySolutionNavigation();
     const isPolicySettingsVisible = useIsPolicySettingsBarVisible();
-    const [isTimelineBottomBarVisible] = useShowTimeline();
+    const { pathname } = useLocation();
+    const getIsTimelineBottomBarVisible = useShowTimeline();
+    const isTimelineBottomBarVisible = useMemo(
+      () => getIsTimelineBottomBarVisible(pathname),
+      [pathname, getIsTimelineBottomBarVisible]
+    );
     const getTimelineShowStatus = useMemo(() => getTimelineShowStatusByIdSelector(), []);
     const { show: isShowingTimelineOverlay } = useDeepEqualSelector((state) =>
       getTimelineShowStatus(state, TimelineId.active)
     );
+
     const isGroupedNavEnabled = useIsGroupedNavigationEnabled();
     const addBottomPadding =
       isTimelineBottomBarVisible || isPolicySettingsVisible || isGroupedNavEnabled;
