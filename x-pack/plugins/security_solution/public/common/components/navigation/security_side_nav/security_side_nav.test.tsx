@@ -13,6 +13,7 @@ import { SecuritySideNav } from './security_side_nav';
 import type { SolutionGroupedNavProps } from '../solution_grouped_nav/solution_grouped_nav';
 import type { NavLinkItem } from '../types';
 import { bottomNavOffset } from '../../../lib/helpers';
+import { MemoryRouter as Router } from 'react-router-dom';
 
 const manageNavLink: NavLinkItem = {
   id: SecurityPageName.administration,
@@ -59,19 +60,25 @@ jest.mock('../../links', () => ({
     }),
 }));
 
-const mockUseShowTimeline = jest.fn((): [boolean] => [false]);
+const mockUseShowTimeline = jest.fn((): boolean => false);
 jest.mock('../../../utils/timeline/use_show_timeline', () => ({
-  useShowTimeline: () => mockUseShowTimeline(),
+  useShowTimeline: () => mockUseShowTimeline,
 }));
+
 const mockUseIsPolicySettingsBarVisible = jest.fn((): boolean => false);
 jest.mock('../../../../management/pages/policy/view/policy_hooks', () => ({
   useIsPolicySettingsBarVisible: () => mockUseIsPolicySettingsBarVisible(),
 }));
 
 const renderNav = () =>
-  render(<SecuritySideNav />, {
-    wrapper: TestProviders,
-  });
+  render(
+    <Router>
+      <SecuritySideNav />
+    </Router>,
+    {
+      wrapper: TestProviders,
+    }
+  );
 
 describe('SecuritySideNav', () => {
   beforeEach(() => {
@@ -195,7 +202,7 @@ describe('SecuritySideNav', () => {
   describe('bottom offset', () => {
     it('should render with bottom offset when timeline bar visible', () => {
       mockUseIsPolicySettingsBarVisible.mockReturnValueOnce(false);
-      mockUseShowTimeline.mockReturnValueOnce([true]);
+      mockUseShowTimeline.mockReturnValueOnce(true);
       renderNav();
       expect(mockSolutionGroupedNav).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -205,7 +212,7 @@ describe('SecuritySideNav', () => {
     });
 
     it('should render with bottom offset when policy settings bar visible', () => {
-      mockUseShowTimeline.mockReturnValueOnce([false]);
+      mockUseShowTimeline.mockReturnValueOnce(false);
       mockUseIsPolicySettingsBarVisible.mockReturnValueOnce(true);
       renderNav();
       expect(mockSolutionGroupedNav).toHaveBeenCalledWith(
@@ -216,7 +223,7 @@ describe('SecuritySideNav', () => {
     });
 
     it('should not render with bottom offset when not needed', () => {
-      mockUseShowTimeline.mockReturnValueOnce([false]);
+      mockUseShowTimeline.mockReturnValueOnce(false);
       mockUseIsPolicySettingsBarVisible.mockReturnValueOnce(false);
       renderNav();
       expect(mockSolutionGroupedNav).toHaveBeenCalledWith(

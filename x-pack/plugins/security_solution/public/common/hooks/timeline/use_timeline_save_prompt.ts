@@ -99,6 +99,11 @@ export const useTimelineSavePrompt = (
   ]);
 
   useEffect(() => {
+    /*
+     * Although onAppLeave is being deprecated in 8.8 in favour of history.block
+     * We still cannot remove it because of couple of bugs. See the link below:
+     * https://github.com/elastic/kibana/issues/132597
+     * */
     onAppLeave((actions, nextAppId) => {
       // Confirm when the user has made any changes to a timeline
       if (

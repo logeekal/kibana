@@ -10,11 +10,12 @@ import React from 'react';
 
 import { TestProviders } from '../../../common/mock';
 import { SecuritySolutionTemplateWrapper } from '.';
+import { MemoryRouter as Router } from 'react-router-dom';
 
-const mockUseShowTimeline = jest.fn((): [boolean] => [false]);
+const mockUseShowTimeline = jest.fn((): boolean => false);
 jest.mock('../../../common/utils/timeline/use_show_timeline', () => ({
   ...jest.requireActual('../../../common/utils/timeline/use_show_timeline'),
-  useShowTimeline: () => mockUseShowTimeline(),
+  useShowTimeline: () => mockUseShowTimeline,
 }));
 
 jest.mock('./bottom_bar', () => ({
@@ -52,9 +53,11 @@ jest.mock('../../../common/components/navigation/use_security_solution_navigatio
 const renderComponent = () => {
   return render(
     <TestProviders>
-      <SecuritySolutionTemplateWrapper>
-        <div>{'child of wrapper'}</div>
-      </SecuritySolutionTemplateWrapper>
+      <Router>
+        <SecuritySolutionTemplateWrapper>
+          <div>{'child of wrapper'}</div>
+        </SecuritySolutionTemplateWrapper>
+      </Router>
     </TestProviders>
   );
 };
@@ -65,7 +68,7 @@ describe('SecuritySolutionTemplateWrapper', () => {
   });
 
   it('Should render with bottom bar when user allowed', async () => {
-    mockUseShowTimeline.mockReturnValue([true]);
+    mockUseShowTimeline.mockReturnValue(true);
     const { getByText } = renderComponent();
 
     await waitFor(() => {
@@ -75,7 +78,7 @@ describe('SecuritySolutionTemplateWrapper', () => {
   });
 
   it('Should not show bottom bar when user not allowed', async () => {
-    mockUseShowTimeline.mockReturnValue([false]);
+    mockUseShowTimeline.mockReturnValue(false);
 
     const { getByText, queryByText } = renderComponent();
 
