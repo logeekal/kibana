@@ -8,11 +8,13 @@
 import { isEmpty } from 'lodash/fp';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import type { ConnectedProps } from 'react-redux';
-import { connect, useDispatch } from 'react-redux';
+import { connect, useDispatch, useSelector } from 'react-redux';
 import type { Filter } from '@kbn/es-query';
 import { getEsQueryConfig } from '@kbn/data-plugin/common';
+import { eventsViewerSelector } from '../../../common/components/events_viewer/selectors';
 import type { Status } from '../../../../common/detection_engine/schemas/common/schemas';
 import type { RowRendererId, TimelineIdLiteral } from '../../../../common/types/timeline';
+import { TimelineId } from '../../../../common/types/timeline';
 import { StatefulEventsViewer } from '../../../common/components/events_viewer';
 import { useSourcererDataView } from '../../../common/containers/sourcerer';
 import { useIsExperimentalFeatureEnabled } from '../../../common/hooks/use_experimental_features';
@@ -39,6 +41,8 @@ import {
 import { buildTimeRangeFilter } from './helpers';
 import * as i18n from './translations';
 import { useLicense } from '../../../common/hooks/use_license';
+import { useBulkAddToCaseActions } from './timeline_actions/use_bulk_add_to_case_actions';
+import { useAddBulkToTimelineAction } from './timeline_actions/use_add_bulk_to_timeline';
 
 interface OwnProps {
   defaultFilters?: Filter[];
@@ -195,6 +199,38 @@ export const AlertsTableComponent: React.FC<AlertsTableComponentProps> = ({
     [ACTION_BUTTON_COUNT]
   );
 
+  const refetchQuery = useCallback((newQueries: inputsModel.GlobalQuery[]) => {
+    newQueries.forEach((q) => q.refetch && (q.refetch as inputsModel.Refetch)());
+  }, []);
+
+  const { timelineQuery, globalQueries } = useSelector((state: State) =>
+    eventsViewerSelector(state, timelineId)
+  );
+
+  const addToCaseBulkActions = useBulkAddToCaseActions();
+  const addBulkToTimelineAction = useAddBulkToTimelineAction();
+
+  const bulkActions = useMemo(
+    () => ({
+      onAlertStatusActionSuccess: () => {
+        if (timelineId === TimelineId.active) {
+          refetchQuery([timelineQuery]);
+        } else {
+          refetchQuery(globalQueries);
+        }
+      },
+      customBulkActions: [...addToCaseBulkActions, addBulkToTimelineAction],
+    }),
+    [
+      timelineId,
+      globalQueries,
+      refetchQuery,
+      timelineQuery,
+      addToCaseBulkActions,
+      addBulkToTimelineAction,
+    ]
+  );
+
   if (loading || isEmpty(selectedPatterns)) {
     return null;
   }
@@ -206,6 +242,7 @@ export const AlertsTableComponent: React.FC<AlertsTableComponentProps> = ({
       defaultCellActions={defaultCellActions}
       defaultModel={getAlertsDefaultModel(license)}
       end={to}
+      bulkActions={bulkActions}
       entityType="events"
       hasAlertsCrud={hasIndexWrite && hasIndexMaintenance}
       id={timelineId}

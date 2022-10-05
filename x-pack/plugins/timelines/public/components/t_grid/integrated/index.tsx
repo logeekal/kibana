@@ -129,7 +129,6 @@ export interface TGridIntegratedProps {
   // If truthy, the graph viewer (Resolver) is showing
   graphEventId?: string;
   graphOverlay?: React.ReactNode;
-  hasAlertsCrud: boolean;
   height?: number;
   id: TimelineId;
   indexNames: string[];
@@ -174,7 +173,6 @@ const TGridIntegratedComponent: React.FC<TGridIntegratedProps> = ({
   globalFullScreen,
   graphEventId,
   graphOverlay = null,
-  hasAlertsCrud,
   id,
   indexNames,
   indexPattern,
@@ -372,8 +370,9 @@ const TGridIntegratedComponent: React.FC<TGridIntegratedProps> = ({
                         filterQuery={filterQuery}
                         filters={filters}
                         filterStatus={filterStatus}
+                        /* hasAlertsCrud is only relevant for Standalone TGrid*/
+                        hasAlertsCrud={true}
                         getRowRenderer={getRowRenderer}
-                        hasAlertsCrud={hasAlertsCrud}
                         id={id}
                         indexNames={indexNames}
                         isEventViewer={true}

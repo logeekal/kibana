@@ -93,6 +93,7 @@ const SessionsViewComponent: React.FC<SessionsComponentsProps> = ({
         pageFilters={sessionsFilter}
         defaultModel={getSessionsDefaultModel(columns, defaultColumns)}
         end={endDate}
+        bulkActions={false}
         entityType={entityType}
         id={timelineId}
         leadingControlColumns={leadingControlColumns}

@@ -12,6 +12,7 @@ import { EuiCheckbox } from '@elastic/eui';
 import type { Filter } from '@kbn/es-query';
 import type { EntityType } from '@kbn/timelines-plugin/common';
 
+import type { BulkActionsProp } from '@kbn/timelines-plugin/common/types';
 import type { TimelineId } from '../../../../common/types/timeline';
 import { RowRendererId } from '../../../../common/types/timeline';
 import { StatefulEventsViewer } from '../events_viewer';
@@ -41,6 +42,7 @@ import { useLicense } from '../../hooks/use_license';
 
 import { useUiSetting$ } from '../../lib/kibana';
 import { defaultAlertsFilters } from '../events_viewer/external_alerts_filter';
+import { useAddBulkToTimelineAction } from '../../../detections/components/alerts_table/timeline_actions/use_add_bulk_to_timeline';
 
 export const ALERTS_EVENTS_HISTOGRAM_ID = 'alertsOrEventsHistogramQuery';
 
@@ -96,6 +98,9 @@ const EventsQueryTabBodyComponent: React.FC<EventsQueryTabBodyComponentProps> = 
               }
             : c
         ),
+        title: 'Host Events Table ---> ',
+        showCheckboxes: true,
+        selectAll: true,
         excludedRowRendererIds: showExternalAlerts ? Object.values(RowRendererId) : undefined,
       })
     );
@@ -140,6 +145,14 @@ const EventsQueryTabBodyComponent: React.FC<EventsQueryTabBodyComponentProps> = 
     [showExternalAlerts, externalAlertPageFilters, pageFilters]
   );
 
+  const addBulkToTimelineAction = useAddBulkToTimelineAction();
+  const bulkActions = useMemo<BulkActionsProp | boolean>(() => {
+    return {
+      alertStatusActions: false,
+      customBulkActions: [addBulkToTimelineAction],
+    };
+  }, [addBulkToTimelineAction]);
+
   return (
     <>
       {!globalFullScreen && (
@@ -168,6 +181,7 @@ const EventsQueryTabBodyComponent: React.FC<EventsQueryTabBodyComponentProps> = 
         unit={showExternalAlerts ? i18n.ALERTS_UNIT : i18n.EVENTS_UNIT}
         defaultModel={defaultModel}
         pageFilters={composedPageFilters}
+        bulkActions={bulkActions}
       />
     </>
   );
