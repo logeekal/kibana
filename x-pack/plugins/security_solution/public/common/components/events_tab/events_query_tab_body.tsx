@@ -98,7 +98,6 @@ const EventsQueryTabBodyComponent: React.FC<EventsQueryTabBodyComponentProps> = 
               }
             : c
         ),
-        title: 'Host Events Table ---> ',
         showCheckboxes: true,
         selectAll: true,
         excludedRowRendererIds: showExternalAlerts ? Object.values(RowRendererId) : undefined,
