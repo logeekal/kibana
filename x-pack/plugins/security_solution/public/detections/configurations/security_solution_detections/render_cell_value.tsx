@@ -7,10 +7,13 @@
 
 import type { EuiDataGridCellValueElementProps } from '@elastic/eui';
 import { EuiIcon, EuiToolTip, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useContext, useMemo } from 'react';
 import type { GetRenderCellValue } from '@kbn/triggers-actions-ui-plugin/public';
 import { find, getOr } from 'lodash/fp';
 import type { TimelineNonEcsData } from '@kbn/timelines-plugin/common';
+import type { EuiTheme } from '@kbn/kibana-react-plugin/common';
+import { ThemeContext } from 'styled-components';
+import { addBuildingBlockStyle } from '../../../common/components/data_table/helpers';
 import { useLicense } from '../../../common/hooks/use_license';
 import { dataTableSelectors } from '../../../common/store/data_table';
 import type { TableId } from '../../../../common/types';
@@ -109,6 +112,8 @@ export const getRenderCellValueHook = ({
     const columnHeaders =
       viewMode === VIEW_SELECTION.gridView ? getColumns(license) : eventRenderedViewColumns;
 
+    const theme: EuiTheme = useContext(ThemeContext);
+
     const result = useCallback(
       ({
         columnId,
@@ -154,6 +159,9 @@ export const getRenderCellValueHook = ({
 
         const localLinkValues = getOr([], colHeader?.linkField ?? '', ecsData);
 
+        const defaultStyles = { overflow: 'hidden' };
+        addBuildingBlockStyle(ecsData, theme, setCellProps, defaultStyles);
+
         return (
           <RenderCellValue
             browserFields={browserFields}
@@ -177,7 +185,7 @@ export const getRenderCellValueHook = ({
           />
         );
       },
-      [browserFieldsByName, browserFields, columnHeaders]
+      [browserFieldsByName, browserFields, columnHeaders, theme]
     );
     return result;
   };

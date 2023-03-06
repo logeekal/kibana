@@ -9,6 +9,9 @@ import type { EcsSecurityExtension as Ecs } from '@kbn/securitysolution-ecs';
 import React, { useCallback, useContext, useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import type { AlertsTableConfigurationRegistry } from '@kbn/triggers-actions-ui-plugin/public/types';
+import type { EuiTheme } from '@kbn/kibana-react-plugin/common';
+import { ThemeContext } from 'styled-components';
+import { addBuildingBlockStyle } from '../../../common/components/data_table/helpers';
 import { StatefulEventContext } from '../../../common/components/events_viewer/stateful_event_context';
 import { eventsViewerSelector } from '../../../common/components/events_viewer/selectors';
 import { getDefaultControlColumn } from '../../../timelines/components/timeline/body/control_columns';
@@ -25,6 +28,7 @@ export const getUseActionColumnHook =
     const license = useLicense();
     const isEnterprisePlus = license.isEnterprise();
     const ACTION_BUTTON_COUNT = isEnterprisePlus ? 5 : 4;
+    const theme: EuiTheme = useContext(ThemeContext);
 
     const eventContext = useContext(StatefulEventContext);
 
@@ -60,6 +64,10 @@ export const getUseActionColumnHook =
           ecs: alert as Ecs,
           data: nonEcsData,
         };
+
+        const defaultStyles = { overflow: 'hidden' };
+
+        addBuildingBlockStyle(timelineItem.ecs, theme, cveProps.setCellProps, defaultStyles);
 
         return (
           <RowAction
@@ -104,6 +112,7 @@ export const getUseActionColumnHook =
         leadingControlColumns,
         selectedEventIds,
         eventContext,
+        theme,
       ]
     );
 
