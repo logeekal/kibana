@@ -17,7 +17,7 @@ import { getTopNavLinks } from './get_top_nav_links';
 import { getHeaderActionMenuMounter } from '../../../../kibana_services';
 import { DiscoverStateContainer } from '../../services/discover_state';
 import { onSaveSearch } from './on_save_search';
-import { useDiscoverExtension } from '../../../../extensions/extension_provider';
+import { useDiscoverCustomization } from '../../../../customizations/customization_provider';
 
 export interface DiscoverTopNavProps {
   onOpenInspector: () => void;
@@ -109,7 +109,7 @@ export const DiscoverTopNav = ({
     });
   }, [dataViewEditor, stateContainer]);
 
-  const topNavExtension = useDiscoverExtension('top_nav');
+  const topNavCustomization = useDiscoverCustomization('top_nav');
   const topNavMenu = useMemo(
     () =>
       getTopNavLinks({
@@ -120,7 +120,7 @@ export const DiscoverTopNav = ({
         isPlainRecord,
         adHocDataViews,
         persistDataView,
-        topNavExtension,
+        topNavCustomization,
       }),
     [
       adHocDataViews,
@@ -130,7 +130,7 @@ export const DiscoverTopNav = ({
       persistDataView,
       services,
       stateContainer,
-      topNavExtension,
+      topNavCustomization,
     ]
   );
 
@@ -198,7 +198,7 @@ export const DiscoverTopNav = ({
     [services, stateContainer]
   );
 
-  const searchBarExtension = useDiscoverExtension('search_bar');
+  const searchBarCustomization = useDiscoverCustomization('search_bar');
 
   return (
     <AggregateQueryTopNavMenu
@@ -216,12 +216,12 @@ export const DiscoverTopNav = ({
       showSearchBar={true}
       useDefaultBehaviors={true}
       customDataViewPicker={
-        searchBarExtension?.CustomDataViewPicker ? (
-          <searchBarExtension.CustomDataViewPicker />
+        searchBarCustomization?.CustomDataViewPicker ? (
+          <searchBarCustomization.CustomDataViewPicker />
         ) : undefined
       }
       dataViewPickerComponentProps={
-        searchBarExtension?.CustomDataViewPicker ? undefined : dataViewPickerProps
+        searchBarCustomization?.CustomDataViewPicker ? undefined : dataViewPickerProps
       }
       displayStyle="detached"
       textBasedLanguageModeErrors={
