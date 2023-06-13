@@ -41,8 +41,11 @@
       "unifiedSearch",
       "files",
       "controls",
-      "dataViews",
+      "dataViewEditor",
       "savedObjectsManagement",
+      "discover",
+      "notifications",
+      "navigation"
     ],
     "optionalPlugins": [
       "cloudExperiments",

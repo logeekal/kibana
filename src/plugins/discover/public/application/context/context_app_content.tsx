@@ -115,6 +115,8 @@ export function ContextAppContent({
     return [[dataView.timeFieldName!, SortDirection.desc]];
   }, [dataView]);
 
+  console.log('tab', { rows });
+
   return (
     <Fragment>
       <ActionBarMemoized

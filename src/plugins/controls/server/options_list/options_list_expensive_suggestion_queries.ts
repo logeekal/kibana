@@ -83,6 +83,8 @@ const expensiveSuggestionAggSubtypes: { [key: string]: OptionsListSuggestionAggr
           },
         };
       }
+
+      console.log(JSON.stringify(textOrKeywordQuery, undefined, 2));
       return textOrKeywordQuery;
     },
     parse: (rawEsResult, request) => {

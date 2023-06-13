@@ -53,6 +53,9 @@ export const DiscoverTopNav = ({
     () => dataView.isTimeBased() && dataView.type !== DataViewType.ROLLUP,
     [dataView]
   );
+
+  console.log({ dataView });
+
   const services = useDiscoverServices();
   const { dataViewEditor, navigation, dataViewFieldEditor, data, uiSettings, dataViews } = services;
 

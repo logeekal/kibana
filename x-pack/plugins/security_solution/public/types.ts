@@ -9,7 +9,7 @@ import type { BehaviorSubject, Observable } from 'rxjs';
 
 import type { AppLeaveHandler, CoreStart } from '@kbn/core/public';
 import type { HomePublicPluginSetup } from '@kbn/home-plugin/public';
-import type { DataPublicPluginStart } from '@kbn/data-plugin/public';
+import type { DataPublicPluginStart, FilterManager } from '@kbn/data-plugin/public';
 import type { EmbeddableStart } from '@kbn/embeddable-plugin/public';
 import type { LensPublicStart } from '@kbn/lens-plugin/public';
 import type { NewsfeedPublicPluginStart } from '@kbn/newsfeed-plugin/public';
@@ -49,6 +49,9 @@ import type { GuidedOnboardingPluginStart } from '@kbn/guided-onboarding-plugin/
 import type { DataViewsServicePublic } from '@kbn/data-views-plugin/public';
 import type { SavedObjectsManagementPluginStart } from '@kbn/saved-objects-management-plugin/public';
 
+import type { DiscoverStart } from '@kbn/discover-plugin/public';
+import type { NavigationPublicPluginStart } from '@kbn/navigation-plugin/public';
+import type { DataViewEditorStart } from '@kbn/data-view-editor-plugin/public';
 import type { ResolverPluginSetup } from './resolver/types';
 import type { Inspect } from '../common/search_strategy';
 import type { Detections } from './detections';
@@ -109,6 +112,9 @@ export interface StartPlugins {
   threatIntelligence: ThreatIntelligencePluginStart;
   cloudExperiments?: CloudExperimentsPluginStart;
   dataViews: DataViewsServicePublic;
+  discover: DiscoverStart;
+  navigation: NavigationPublicPluginStart;
+  dataViewEditor: DataViewEditorStart;
 }
 
 export interface StartPluginsDependencies extends StartPlugins {
@@ -134,6 +140,7 @@ export type StartServices = CoreStart &
     savedObjectsManagement: SavedObjectsManagementPluginStart;
     isSidebarEnabled$: BehaviorSubject<boolean>;
     telemetry: TelemetryClientStart;
+    discoverFilterManager: FilterManager;
   };
 
 export interface PluginSetup {

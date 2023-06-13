@@ -29,6 +29,7 @@ import type { StartServices } from '../types';
 import { PageRouter } from './routes';
 import { UserPrivilegesProvider } from '../common/components/user_privileges/user_privileges_context';
 import { ReactQueryClientProvider } from '../common/containers/query_client/query_client_provider';
+import { DiscoverCustomizationServiceProvider } from './DiscoverCustomizationsProviders';
 
 interface StartAppComponent {
   children: React.ReactNode;
@@ -117,15 +118,17 @@ const SecurityAppComponent: React.FC<SecurityAppComponentProps> = ({
       ...services,
     }}
   >
-    <StartApp
-      history={history}
-      onAppLeave={onAppLeave}
-      setHeaderActionMenu={setHeaderActionMenu}
-      store={store}
-      theme$={theme$}
-    >
-      {children}
-    </StartApp>
+    <DiscoverCustomizationServiceProvider>
+      <StartApp
+        history={history}
+        onAppLeave={onAppLeave}
+        setHeaderActionMenu={setHeaderActionMenu}
+        store={store}
+        theme$={theme$}
+      >
+        {children}
+      </StartApp>
+    </DiscoverCustomizationServiceProvider>
   </KibanaContextProvider>
 );
 

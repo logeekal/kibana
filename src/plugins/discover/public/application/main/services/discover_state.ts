@@ -421,6 +421,7 @@ export function getDiscoverStateContainer({
    * Function e.g. triggered when user changes data view in the sidebar
    */
   const onChangeDataView = async (id: string | DataView) => {
+    debugger;
     await changeDataView(id, {
       services,
       internalState: internalStateContainer,
@@ -536,9 +537,9 @@ function createUrlGeneratorState({
     interval: appState.interval,
     refreshInterval: shouldRestoreSearchSession
       ? {
-          pause: true, // force pause refresh interval when restoring a session
-          value: 0,
-        }
+        pause: true, // force pause refresh interval when restoring a session
+        value: 0,
+      }
       : undefined,
     useHash: false,
     viewMode: appState.viewMode,

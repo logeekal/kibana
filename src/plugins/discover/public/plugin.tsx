@@ -54,7 +54,7 @@ import {
   syncHistoryLocations,
 } from './kibana_services';
 import { registerFeature } from './register_feature';
-import { buildServices } from './build_services';
+import { buildServices, DiscoverServices } from './build_services';
 import { SearchEmbeddableFactory } from './embeddable';
 import { DeferredSpinner } from './components';
 import { ViewSavedSearchAction } from './embeddable/view_saved_search_action';
@@ -74,6 +74,7 @@ import { DiscoverAppLocator, DiscoverAppLocatorDefinition } from '../common';
 import type { CustomizationCallback } from './customizations/types';
 import { createProfileRegistry } from './customizations/profile_registry';
 import { ProfileAwareLocator } from './customizations/profile_aware_locator';
+import { useDiscoverMainRoute } from './exports/discover_app';
 
 const DocViewerLegacyTable = React.lazy(
   () => import('./services/doc_views/components/doc_viewer_table/legacy')
@@ -159,6 +160,9 @@ export interface DiscoverStart {
    */
   readonly locator: undefined | DiscoverAppLocator;
   readonly customize: (profileName: string, callback: CustomizationCallback) => void;
+  readonly useDiscoverMainRoute: (
+    services?: Partial<DiscoverServices>
+  ) => ReturnType<typeof useDiscoverMainRoute>;
 }
 
 /**
@@ -401,6 +405,15 @@ export class DiscoverPlugin
 
     const { uiActions } = plugins;
 
+    const services = buildServices(
+      core,
+      plugins,
+      this.initializerContext,
+      this.locator!,
+      this.contextLocator!,
+      this.singleDocLocator!
+    );
+
     const viewSavedSearchAction = new ViewSavedSearchAction(core.application);
     uiActions.addTriggerAction('CONTEXT_MENU_TRIGGER', viewSavedSearchAction);
     setUiActions(plugins.uiActions);
@@ -409,6 +422,9 @@ export class DiscoverPlugin
 
     return {
       locator: this.locator,
+      useDiscoverMainRoute: (overrideServices: Partial<DiscoverServices>) => {
+        return useDiscoverMainRoute({ ...services, ...overrideServices });
+      },
       customize: (profileName: string, callback: CustomizationCallback) => {
         const profile = this.profileRegistry.get(profileName) ?? {
           name: profileName,

@@ -143,6 +143,8 @@ export const ContextApp = ({ dataView, anchorId, referrer }: ContextAppProps) =>
     [fetchedState.predecessors, fetchedState.anchor, fetchedState.successors]
   );
 
+  console.log('tab', { rows });
+
   const addFilter = useCallback(
     async (field: DataViewField | string, values: unknown, operation: string) => {
       const newFilters = generateFilters(filterManager, field, values, operation, dataView);

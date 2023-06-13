@@ -199,6 +199,7 @@ export function getDataStateContainer({
       abortController = new AbortController();
       const prevAutoRefreshDone = autoRefreshDone;
 
+      console.log('tab : ', 'fetchAll');
       await fetchAll(dataSubjects, reset, {
         abortController,
         initialFetchStatus: getInitialFetchStatus(),

@@ -249,12 +249,13 @@ class SearchBarUI<QT extends (Query | AggregateQuery) | Query = Query> extends C
   }
 
   private shouldRenderFilterBar() {
-    return (
+    const should =
       this.props.showFilterBar &&
       this.props.filters &&
       this.props.indexPatterns &&
-      compact(this.props.indexPatterns).length > 0
-    );
+      compact(this.props.indexPatterns).length > 0;
+
+    return should;
   }
 
   /*
@@ -516,6 +517,13 @@ class SearchBarUI<QT extends (Query | AggregateQuery) | Query = Query> extends C
     ) : undefined;
 
     let filterBar;
+
+    console.log({
+      showFilterBar: this.shouldRenderFilterBar(),
+      shouldShowDatePickerAsBadge: this.shouldShowDatePickerAsBadge(),
+      filters: this.props.filters,
+    });
+
     if (this.shouldRenderFilterBar()) {
       filterBar = this.shouldShowDatePickerAsBadge() ? (
         <FilterItems

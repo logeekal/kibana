@@ -22,6 +22,7 @@ export const fetchDocuments = (
   searchSource: ISearchSource,
   { abortController, inspectorAdapters, searchSessionId, services }: FetchDeps
 ): Promise<RecordsFetchResponse> => {
+  debugger;
   searchSource.setField('size', services.uiSettings.get(SAMPLE_SIZE_SETTING));
   searchSource.setField('trackTotalHits', false);
   searchSource.setField('highlightAll', true);

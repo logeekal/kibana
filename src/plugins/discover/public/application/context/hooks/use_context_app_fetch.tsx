@@ -118,6 +118,8 @@ export function useContextAppFetch({
 
   const fetchSurroundingRows = useCallback(
     async (type: SurrDocType, fetchedAnchor?: DataTableRecord) => {
+      console.log('tab', 'Fetching surroungding rows');
+      debugger;
       const filters = filterManager.getFilters();
 
       const count =
@@ -178,6 +180,7 @@ export function useContextAppFetch({
   );
 
   const fetchAllRows = useCallback(() => {
+    console.log('tab', 'Fetching all rows!');
     fetchAnchorRow().then((anchor) => anchor && fetchContextRows(anchor));
   }, [fetchAnchorRow, fetchContextRows]);
 
