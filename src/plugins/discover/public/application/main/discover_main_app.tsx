@@ -69,6 +69,7 @@ export function DiscoverMainApp(props: DiscoverMainProps) {
    */
   useEffect(() => {
     const unsubscribe = stateContainer.actions.initializeAndSync();
+    console.log('tab', 'initializeAndSync');
     stateContainer.actions.fetchData(true);
     return () => unsubscribe();
   }, [stateContainer]);

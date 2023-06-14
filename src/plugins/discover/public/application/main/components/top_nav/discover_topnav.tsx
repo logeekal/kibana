@@ -54,8 +54,6 @@ export const DiscoverTopNav = ({
     [dataView]
   );
 
-  console.log({ dataView });
-
   const services = useDiscoverServices();
   const { dataViewEditor, navigation, dataViewFieldEditor, data, uiSettings, dataViews } = services;
 

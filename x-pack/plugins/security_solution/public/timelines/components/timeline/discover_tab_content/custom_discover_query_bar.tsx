@@ -10,7 +10,6 @@ import type { DataView } from '@kbn/data-views-plugin/common';
 import type { AggregateQuery, Query, TimeRange } from '@kbn/es-query';
 import type { DiscoverStateContainer } from '@kbn/discover-plugin/public/application/main/services/discover_state';
 import type { DataViewPickerProps } from '@kbn/unified-search-plugin/public';
-import { useDiscoverCustomizationServiceForSecuritySolution } from '../../../../app/DiscoverCustomizationsProviders';
 import { useGlobalTime } from '../../../../common/containers/use_global_time';
 import type { QueryBarComponentProps } from '../../../../common/components/query_bar';
 import { QueryBar } from '../../../../common/components/query_bar';
@@ -33,8 +32,8 @@ interface Props {
 }
 
 export const CustomDiscoverQueryBar = (props: Props) => {
-  const { onFieldEdited, updateQuery, savedQuery } = props;
-  const { discoverStateContainer } = useDiscoverCustomizationServiceForSecuritySolution();
+  const { onFieldEdited, updateQuery, savedQuery, stateContainer: discoverStateContainer } = props;
+  // const { discoverStateContainer } = useDiscoverCustomizationServiceForSecuritySolution();
   const {
     services: {
       uiSettings,
@@ -47,28 +46,32 @@ export const CustomDiscoverQueryBar = (props: Props) => {
 
   const { filters } = useDiscoverFilterManager(filterManager);
 
-  const [appState, setAppState] = useState(() => discoverStateContainer?.appState.get());
+  const appStateFn = useCallback(
+    () => discoverStateContainer?.appState.get(),
+    [discoverStateContainer]
+  );
+  // const [appState, setAppState] = useState(() => discoverStateContainer?.appState.get());
   const [internalState, setInternalState] = useState(() =>
     discoverStateContainer?.internalState.get()
   );
 
-  useEffect(() => {
-    const appStateSub = discoverStateContainer?.appState.state$.subscribe({
-      next: (newState) => {
-        console.log('app state changed', newState);
-        setAppState(newState);
-      },
-    });
+  // useEffect(() => {
+  //   const appStateSub = discoverStateContainer?.appState.state$.subscribe({
+  //     next: (newState) => {
+  //       console.log('tab', 'app state changed', newState);
+  //       setAppState(newState);
+  //     },
+  //   });
+  //
+  //   const internalStateSub = discoverStateContainer?.internalState.state$.subscribe({
+  //     next: (newState) => {
+  //       console.log('internal State changed', newState);
+  //       setInternalState(newState);
+  //     },
+  //   });
 
-    const internalStateSub = discoverStateContainer?.internalState.state$.subscribe({
-      next: (newState) => {
-        console.log('internal State changed', newState);
-        setInternalState(newState);
-      },
-    });
-
-    return () => [appStateSub, internalStateSub].forEach((sub) => sub?.unsubscribe());
-  }, [discoverStateContainer]);
+  //   return () => [appStateSub, internalStateSub].forEach((sub) => sub?.unsubscribe());
+  // }, [discoverStateContainer]);
 
   const canEditDataView =
     Boolean(dataViewEditor?.userPermissions.editDataView()) ||
@@ -93,8 +96,8 @@ export const CustomDiscoverQueryBar = (props: Props) => {
     () =>
       canEditDataView
         ? async (fieldName?: string, uiAction: 'edit' | 'add' = 'edit') => {
-            if (appState?.index) {
-              const dataViewInstance = await dataViewServices.get(appState?.index);
+            if (appStateFn()?.index) {
+              const dataViewInstance = await dataViewServices.get(appStateFn()?.index);
               closeFieldEditor.current = dataViewFieldEditor.openEditor({
                 ctx: {
                   dataView: dataViewInstance,
@@ -107,7 +110,7 @@ export const CustomDiscoverQueryBar = (props: Props) => {
             }
           }
         : undefined,
-    [canEditDataView, appState?.index, dataViewServices, dataViewFieldEditor, onFieldEdited]
+    [canEditDataView, appStateFn, dataViewServices, dataViewFieldEditor, onFieldEdited]
   );
 
   const addField = useMemo(
@@ -201,11 +204,15 @@ export const CustomDiscoverQueryBar = (props: Props) => {
       localAppState.set(newState);
     }
   };
+
   useEffect(() => {
+    debugger;
+    console.log('tab', 'ss-container', discoverStateContainer?.appState);
     discoverStateContainer?.appState.update({ filters });
   }, [filters, discoverStateContainer?.appState]);
 
-  if (!internalState || !internalState.dataView || !appState) return <p>{'Nothing'}</p>;
+  if (!internalState || !internalState.dataView || !discoverStateContainer?.appState)
+    return <p>{'Nothing'}</p>;
 
   return (
     <QueryBar
@@ -216,7 +223,7 @@ export const CustomDiscoverQueryBar = (props: Props) => {
       hideSavedQuery={false}
       indexPattern={internalState.dataView}
       isRefreshPaused={true}
-      filterQuery={appState.query as Query}
+      filterQuery={appStateFn()?.query as Query}
       filterManager={filterManager}
       filters={filters}
       savedQueryId={savedQuery}

@@ -357,6 +357,7 @@ export function getDiscoverStateContainer({
     const appStateInitAndSyncUnsubscribe = appStateContainer.initAndSync(
       savedSearchContainer.getState()
     );
+
     // subscribing to state changes of appStateContainer, triggering data fetching
     const appStateUnsubscribe = appStateContainer.subscribe(
       buildStateSubscribe({
@@ -374,8 +375,16 @@ export function getDiscoverStateContainer({
     // updates saved search when query or filters change, triggers data fetching
     const filterUnsubscribe = merge(
       services.data.query.queryString.getUpdates$(),
-      services.filterManager.getFetches$()
+      services.filterManager.getUpdates$(),
+      appStateContainer.state$
     ).subscribe(async () => {
+      const filters = services.filterManager.getFilters();
+      const appStateFilters = appStateContainer.getState();
+      debugger;
+      console.log('tab', 'savedSearchContainer', {
+        filters,
+        appStateFilters,
+      });
       await savedSearchContainer.update({
         nextDataView: internalStateContainer.getState().dataView,
         nextState: appStateContainer.getState(),
@@ -537,9 +546,9 @@ function createUrlGeneratorState({
     interval: appState.interval,
     refreshInterval: shouldRestoreSearchSession
       ? {
-        pause: true, // force pause refresh interval when restoring a session
-        value: 0,
-      }
+          pause: true, // force pause refresh interval when restoring a session
+          value: 0,
+        }
       : undefined,
     useHash: false,
     viewMode: appState.viewMode,

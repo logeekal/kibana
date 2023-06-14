@@ -50,6 +50,7 @@ export function fetchAll(
 ): Promise<void> {
   const { initialFetchStatus, getAppState, services, inspectorAdapters, savedSearch } = fetchDeps;
   const { data } = services;
+  debugger;
   const searchSource = savedSearch.searchSource.createChild();
 
   try {
