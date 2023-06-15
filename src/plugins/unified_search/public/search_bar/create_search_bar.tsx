@@ -47,6 +47,7 @@ const defaultFiltersUpdated = (
   onFiltersUpdated?: (filters: Filter[]) => void
 ) => {
   return (filters: Filter[]) => {
+    debugger;
     if (onFiltersUpdated) {
       onFiltersUpdated(filters);
     } else {

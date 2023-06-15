@@ -187,8 +187,10 @@ export const CustomDiscoverQueryBar = (props: Props) => {
           mode: timefilter?.mode ?? 'absolute',
         },
       });
+
+      discoverStateContainer.actions.onUpdateQuery();
     },
-    [updateQuery, from, to]
+    [updateQuery, from, to, discoverStateContainer]
   );
 
   const updateSavedQueryId = (newSavedQueryId: string | undefined) => {
@@ -206,9 +208,8 @@ export const CustomDiscoverQueryBar = (props: Props) => {
   };
 
   useEffect(() => {
-    debugger;
-    console.log('tab', 'ss-container', discoverStateContainer?.appState);
-    discoverStateContainer?.appState.update({ filters });
+    console.log('tab', 'ss-container', 'filters Updated in discover filtermanager.');
+    // discoverStateContainer?.appState.update({ filters });
   }, [filters, discoverStateContainer?.appState]);
 
   if (!internalState || !internalState.dataView || !discoverStateContainer?.appState)

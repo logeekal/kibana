@@ -251,8 +251,6 @@ export function DiscoverLayout({ stateContainer, persistDataView }: DiscoverLayo
     onDropFieldToTable,
   ]);
 
-  const SearchBar = searchBarCustomization?.CustomQueryBar ?? TopNavMemoized;
-
   return (
     <EuiPage className="dscPage" data-fetch-counter={fetchCounter.current}>
       <h1
@@ -273,7 +271,7 @@ export function DiscoverLayout({ stateContainer, persistDataView }: DiscoverLayo
               defaultMessage: 'Discover - Search not yet saved',
             })}
       </h1>
-      <SearchBar
+      <TopNavMemoized
         onOpenInspector={onOpenInspector}
         query={query}
         savedQuery={savedQuery}

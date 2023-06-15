@@ -18,7 +18,7 @@ import type {
   PluginInitializerContext,
   Plugin as IPlugin,
 } from '@kbn/core/public';
-import { FilterManager } from '@kbn/data-plugin/public';
+import { FilterManager, NowProvider, QueryService } from '@kbn/data-plugin/public';
 import { DEFAULT_APP_CATEGORIES, AppNavLinkStatus } from '@kbn/core/public';
 import { Storage } from '@kbn/kibana-utils-plugin/public';
 import type {
@@ -89,6 +89,8 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
 
   readonly experimentalFeatures: ExperimentalFeatures;
   private isSidebarEnabled$: BehaviorSubject<boolean>;
+  private queryService: QueryService = new QueryService();
+  private nowProvider: NowProvider = new NowProvider();
 
   constructor(private readonly initializerContext: PluginInitializerContext) {
     this.config = this.initializerContext.config.get<SecuritySolutionUiConfigType>();
@@ -98,6 +100,7 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
     this.prebuiltRulesPackageVersion = this.config.prebuiltRulesPackageVersion;
     this.isSidebarEnabled$ = new BehaviorSubject<boolean>(true);
     this.telemetry = new TelemetryService();
+    this.storage = new Storage(window.localStorage);
   }
   private appUpdater$ = new Subject<AppUpdater>();
 
@@ -132,6 +135,12 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
     };
     this.telemetry.setup({ analytics: core.analytics }, telemetryContext);
 
+    this.queryService?.setup({
+      uiSettings: core.uiSettings,
+      storage: this.storage,
+      nowProvider: this.nowProvider,
+    });
+
     if (plugins.home) {
       plugins.home.featureCatalogue.registerSolution({
         id: APP_ID,
@@ -158,6 +167,23 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
 
       const { savedObjectsTaggingOss, ...startPlugins } = startPluginsDeps;
 
+      const query = this.queryService.start({
+        uiSettings: core.uiSettings,
+        storage: this.storage,
+        http: core.http,
+      });
+
+      const filterManager = new FilterManager(core.uiSettings);
+
+      const discoverDataService = {
+        ...startPlugins.data,
+        query: {
+          ...query,
+          filterManager,
+        },
+        _pro: 'custom',
+      };
+
       const services: StartServices = {
         ...coreStart,
         ...startPlugins,
@@ -173,7 +199,8 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
         savedObjectsManagement: startPluginsDeps.savedObjectsManagement,
         isSidebarEnabled$: this.isSidebarEnabled$,
         telemetry: this.telemetry.start(),
-        discoverFilterManager: new FilterManager(core.uiSettings),
+        discoverFilterManager: filterManager,
+        discoverDataService,
       };
       return services;
     };
@@ -319,6 +346,7 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
   }
 
   public stop() {
+    this.queryService.stop();
     licenseService.stop();
     return {};
   }

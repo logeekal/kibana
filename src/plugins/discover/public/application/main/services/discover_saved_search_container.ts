@@ -164,7 +164,7 @@ export function getSavedSearchContainer({
     return { id };
   };
   const update = ({ nextDataView, nextState, useFilterAndQueryServices }: UpdateParams) => {
-    addLog('[savedSearch] update', { nextDataView, nextState });
+    addLog('[savedSearch] update', { nextDataView, nextState, useFilterAndQueryServices });
 
     const previousSavedSearch = getState();
     const dataView = nextDataView

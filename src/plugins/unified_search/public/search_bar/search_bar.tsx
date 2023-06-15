@@ -435,6 +435,7 @@ class SearchBarUI<QT extends (Query | AggregateQuery) | Query = Query> extends C
   }
 
   public render() {
+    console.log('dataService-search', { data: this.services.data });
     const { theme } = this.props;
     const isScreenshotMode = this.props.isScreenshotMode === true;
     const styles = searchBarStyles(theme);

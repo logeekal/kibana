@@ -141,6 +141,7 @@ export type StartServices = CoreStart &
     isSidebarEnabled$: BehaviorSubject<boolean>;
     telemetry: TelemetryClientStart;
     discoverFilterManager: FilterManager;
+    discoverDataService: DataPublicPluginStart;
   };
 
 export interface PluginSetup {

@@ -327,6 +327,7 @@ export function getDiscoverStateContainer({
   };
 
   const persistAdHocDataView = async (adHocDataView: DataView) => {
+    addLog('[persistAdHocDataView] Updating appStateContainer');
     const persistedDataView = await services.dataViews.createAndSave({
       ...adHocDataView.toSpec(),
       id: uuidv4(),
@@ -375,13 +376,11 @@ export function getDiscoverStateContainer({
     // updates saved search when query or filters change, triggers data fetching
     const filterUnsubscribe = merge(
       services.data.query.queryString.getUpdates$(),
-      services.filterManager.getUpdates$(),
-      appStateContainer.state$
+      services.filterManager.getUpdates$()
     ).subscribe(async () => {
       const filters = services.filterManager.getFilters();
       const appStateFilters = appStateContainer.getState();
-      debugger;
-      console.log('tab', 'savedSearchContainer', {
+      addLog('[onUpdates] updating savedSearch ', {
         filters,
         appStateFilters,
       });
