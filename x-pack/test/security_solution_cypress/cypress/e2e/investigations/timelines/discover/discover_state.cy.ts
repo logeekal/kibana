@@ -5,19 +5,15 @@
  * 2.0.
  */
 
-import { fillAddFilterForm } from '../../../../tasks/search_bar';
 import {
   addDiscoverEsqlQuery,
   addFieldToTable,
-  openAddDiscoverFilterPopover,
   submitDiscoverSearchBar,
-  switchDataViewTo,
 } from '../../../../tasks/discover';
 import { navigateFromHeaderTo } from '../../../../tasks/security_header';
 import {
   DISCOVER_CONTAINER,
   DISCOVER_ESQL_QUERY_INPUT,
-  DISCOVER_FILTER_BADGES,
   DISCOVER_DATA_VIEW_SWITCHER,
   GET_DISCOVER_DATA_GRID_CELL_HEADER,
 } from '../../../../screens/discover';
