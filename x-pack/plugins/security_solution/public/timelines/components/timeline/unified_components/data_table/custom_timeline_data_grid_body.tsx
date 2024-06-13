@@ -13,6 +13,7 @@ import type { FC } from 'react';
 import React, { memo, useMemo, useState, useEffect, useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import styled from 'styled-components';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import type { RowRenderer } from '../../../../../../common/types';
 import { useDeepEqualSelector } from '../../../../../common/hooks/use_selector';
 import { appSelectors } from '../../../../../common/store';
@@ -73,45 +74,88 @@ export const CustomTimelineDataGridBody: FC<CustomTimelineDataGridBodyProps> = m
     );
     const eventIds = useMemo(() => events.map((event) => event._id), [events]);
 
+    const parentRef = useRef<HTMLDivElement | null>(null);
+
+    const rowVirtualizer = useVirtualizer({
+      count: visibleRows.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 115,
+    });
+
+    const items = rowVirtualizer.getVirtualItems();
+
+    console.log({ items });
+
     return (
-      <>
-        {visibleRows.map((row, rowIndex) => {
-          const eventId = eventIds[rowIndex];
-          const noteIds: string[] = (eventIdToNoteIds && eventIdToNoteIds[eventId]) || emptyNotes;
-          const notes = noteIds
-            .map((noteId) => {
-              const note = notesById[noteId];
-              if (note) {
-                return {
-                  savedObjectId: note.saveObjectId,
-                  note: note.note,
-                  noteId: note.id,
-                  updated: (note.lastEdit ?? note.created).getTime(),
-                  updatedBy: note.user,
-                };
-              } else {
-                return null;
-              }
-            })
-            .filter((note) => note !== null) as TimelineResultNote[];
-          return (
-            <CustomDataGridSingleRow
-              rowData={row}
-              rowIndex={rowIndex}
-              key={rowIndex}
-              visibleColumns={visibleColumns}
-              Cell={Cell}
-              enabledRowRenderers={enabledRowRenderers}
-              rowHeight={props.rowHeight}
-              notes={notes}
-              eventIdsAddingNotes={eventIdsAddingNotes}
-              eventId={eventId}
-              onToggleShowNotes={onToggleShowNotes}
-              refetch={refetch}
-            />
-          );
-        })}
-      </>
+      <div
+        className="grid_parent"
+        ref={parentRef}
+        style={{ height: '100%', width: '100%', overflowY: 'auto' }}
+      >
+        <div
+          style={{
+            height: `${rowVirtualizer.getTotalSize()}px`,
+            width: '100%',
+            position: 'relative',
+          }}
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              transform: `translateY(${items[0]?.start ?? 0}px)`,
+            }}
+          >
+            {items.map((virtualRow, rowIndex) => {
+              const row = visibleRows[virtualRow.index];
+              const eventId = eventIds[rowIndex];
+              const noteIds: string[] =
+                (eventIdToNoteIds && eventIdToNoteIds[eventId]) || emptyNotes;
+              const notes = noteIds
+                .map((noteId) => {
+                  const note = notesById[noteId];
+                  if (note) {
+                    return {
+                      savedObjectId: note.saveObjectId,
+                      note: note.note,
+                      noteId: note.id,
+                      updated: (note.lastEdit ?? note.created).getTime(),
+                      updatedBy: note.user,
+                    };
+                  } else {
+                    return null;
+                  }
+                })
+                .filter((note) => note !== null) as TimelineResultNote[];
+              return (
+                <div
+                  key={virtualRow.key}
+                  data-index={virtualRow.index}
+                  ref={rowVirtualizer.measureElement}
+                  className={virtualRow.index % 2 ? 'ListItemOdd' : 'ListItemEven'}
+                >
+                  <CustomDataGridSingleRow
+                    rowData={row}
+                    rowIndex={rowIndex}
+                    key={rowIndex}
+                    visibleColumns={visibleColumns}
+                    Cell={Cell}
+                    enabledRowRenderers={enabledRowRenderers}
+                    rowHeight={props.rowHeight}
+                    notes={notes}
+                    eventIdsAddingNotes={eventIdsAddingNotes}
+                    eventId={eventId}
+                    onToggleShowNotes={onToggleShowNotes}
+                    refetch={refetch}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     );
   }
 );
@@ -175,17 +219,15 @@ const CustomLazyRowPlaceholder = styled.div.attrs({
  *
  * A Simple Wrapper component for displaying a custom data grid `cell`
  */
-const CustomGridRowCellWrapper = styled.div.attrs<{
+const CustomGridRowWrapper = styled.div.attrs<{
   className?: string;
 }>((props) => ({
   className: `rowCellWrapper ${props.className ?? ''}`,
 }))`
   display: flex;
   align-items: center;
-  height: 36px;
   .euiDataGridRowCell,
   .euiDataGridRowCell__content {
-    height: 100%;
     .unifiedDataTable__rowControl {
       margin-top: 0;
     }
@@ -305,7 +347,7 @@ const CustomDataGridSingleRow = memo(function CustomDataGridSingleRow(
         <CustomLazyRowPlaceholder rowHeight={rowHeight} />
       ) : (
         <>
-          <CustomGridRowCellWrapper className={eventTypeRowClassName}>
+          <CustomGridRowWrapper className={eventTypeRowClassName}>
             {visibleColumns.map((column, colIndex) => {
               return (
                 <React.Fragment key={`${rowIndex}-${colIndex}`}>
@@ -318,7 +360,7 @@ const CustomDataGridSingleRow = memo(function CustomDataGridSingleRow(
                 </React.Fragment>
               );
             })}
-          </CustomGridRowCellWrapper>
+          </CustomGridRowWrapper>
           {/* Timeline Event Detail Row Renderer */}
           {canShowRowRenderer ? (
             <Cell

@@ -112,6 +112,7 @@ export function getWebpackConfig(
       noParse: [
         /[\/\\]node_modules[\/\\]lodash[\/\\]index\.js$/,
         /[\/\\]node_modules[\/\\]vega[\/\\]build-es5[\/\\]vega\.js$/,
+        // /[\/\\]node_modules[\/\\]@tanstack[\/\\]virtual-core[\/\\]dist[\/\\]cjs[\/\\]index\.cjs$/,
       ],
 
       rules: [
@@ -234,8 +235,8 @@ export function getWebpackConfig(
           },
         },
         {
-          test: /\.(js|tsx?)$/,
-          exclude: /node_modules/,
+          test: /\.(cjs|js|tsx?)$/,
+          exclude: /node_modules\/(?!@tanstack\/)/,
           use: {
             loader: 'babel-loader',
             options: {
