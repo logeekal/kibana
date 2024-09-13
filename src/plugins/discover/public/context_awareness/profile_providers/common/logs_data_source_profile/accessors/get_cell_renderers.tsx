@@ -9,6 +9,7 @@
 
 import React, { createContext, useContext } from 'react';
 import { getFieldValue } from '@kbn/discover-utils';
+import { EuiFlyout } from '@elastic/eui';
 import {
   LOG_LEVEL_FIELDS,
   SERVICE_NAME_FIELDS,
@@ -56,5 +57,14 @@ export const getRenderAppWrapper: DataSourceProfileProvider['profile']['getRende
       <testContext.Provider value="test-override">
         <PrevWrapper>{children}</PrevWrapper>
       </testContext.Provider>
+    );
+  };
+
+export const getRenderDocViewerFlyout: DataSourceProfileProvider['profile']['getRenderDocViewerFlyout'] =
+  () => (props) => {
+    return (
+      <EuiFlyout onClose={props.onClose}>
+        <pre>{JSON.stringify(props.hit, null, 2)}</pre>
+      </EuiFlyout>
     );
   };
