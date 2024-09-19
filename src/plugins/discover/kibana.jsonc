@@ -26,7 +26,8 @@
       "unifiedDocViewer",
       "unifiedSearch",
       "unifiedHistogram",
-      "contentManagement"
+      "contentManagement",
+      "discoverShared"
     ],
     "optionalPlugins": [
       "dataVisualizer",
@@ -44,7 +45,14 @@
       "fieldsMetadata",
       "logsDataAccess"
     ],
-    "requiredBundles": ["kibanaUtils", "kibanaReact", "unifiedSearch", "savedObjects"],
-    "extraPublicDirs": ["common"]
+    "requiredBundles": [
+      "kibanaUtils",
+      "kibanaReact",
+      "unifiedSearch",
+      "savedObjects"
+    ],
+    "extraPublicDirs": [
+      "common"
+    ]
   }
 }

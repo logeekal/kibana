@@ -20,6 +20,7 @@ import type {
 import { DEFAULT_APP_CATEGORIES } from '@kbn/core/public';
 import { Storage } from '@kbn/kibana-utils-plugin/public';
 import type { TriggersAndActionsUIPublicPluginSetup } from '@kbn/triggers-actions-ui-plugin/public';
+import type { SecuritySolutionCellRenderFeature } from '@kbn/discover-shared-plugin/public/services/discover_features';
 import { getLazyCloudSecurityPosturePliAuthBlockExtension } from './cloud_security_posture/lazy_cloud_security_posture_pli_auth_block_extension';
 import { getLazyEndpointAgentTamperProtectionExtension } from './management/pages/policy/view/ingest_manager_integration/lazy_endpoint_agent_tamper_protection_extension';
 import type {
@@ -56,6 +57,7 @@ import type { SecurityAppStore } from './common/store/types';
 import { PluginContract } from './plugin_contract';
 import { PluginServices } from './plugin_services';
 import { getExternalReferenceAttachmentEndpointRegular } from './cases/attachments/external_reference';
+import { getCellRendererForGivenRecord } from './one_discover/cell_renderers';
 
 export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, StartPlugins> {
   private config: SecuritySolutionUiConfigType;
@@ -274,6 +276,15 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
         view: 'package-policy-replace-define-step',
         Component: LazyCustomCriblExtension,
       });
+    }
+
+    if (plugins.discoverShared) {
+      const discoverFeatureRegistry = plugins.discoverShared.features.registry;
+      const cellRendererFeature: SecuritySolutionCellRenderFeature = {
+        id: 'security-solution-cell-render',
+        getRender: getCellRendererForGivenRecord,
+      };
+      discoverFeatureRegistry.register(cellRendererFeature);
     }
 
     // Not using await to prevent blocking start execution
@@ -521,5 +532,9 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
       /* webpackChunkName: "lazy_assistant_settings_management" */
       './lazy_assistant_settings_management'
     );
+  }
+
+  private async prepareOneDiscoverExports() {
+    return import('./one_discover/cell_renderers');
   }
 }
