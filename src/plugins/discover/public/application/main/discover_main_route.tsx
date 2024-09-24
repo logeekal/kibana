@@ -347,6 +347,8 @@ export function DiscoverMainRoute({
     [getRenderAppWrapperAccessor]
   );
 
+  console.log({ AppWrapper });
+
   if (error) {
     return <DiscoverError error={error} />;
   }
