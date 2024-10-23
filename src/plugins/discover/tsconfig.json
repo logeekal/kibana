@@ -95,10 +95,11 @@
     "@kbn/presentation-containers",
     "@kbn/observability-ai-assistant-plugin",
     "@kbn/fields-metadata-plugin",
-    "@kbn/security-solution-common",
     "@kbn/router-utils",
     "@kbn/management-settings-ids",
-    "@kbn/logs-data-access-plugin"
+    "@kbn/logs-data-access-plugin",
+    "@kbn/discover-shared-plugin",
+    "@kbn/expandable-flyout"
   ],
   "exclude": [
     "target/**/*"
