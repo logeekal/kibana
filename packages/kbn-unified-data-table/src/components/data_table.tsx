@@ -30,6 +30,7 @@ import {
   EuiDataGridProps,
   EuiHorizontalRule,
   EuiDataGridToolBarVisibilityDisplaySelectorOptions,
+  EuiDataGridPaginationProps,
 } from '@elastic/eui';
 import type { DataView } from '@kbn/data-views-plugin/public';
 import {
@@ -262,6 +263,12 @@ export interface UnifiedDataTableProps {
    */
   onUpdateRowsPerPage?: (rowsPerPage: number) => void;
   /**
+   *
+   * this callback is triggered when user navigates to a different page
+   *
+   */
+  onUpdatePageIndex?: (pageIndex: number) => void;
+  /**
    * Configuration option to limit sample size slider
    */
   maxAllowedSampleSize?: number;
@@ -420,12 +427,6 @@ export interface UnifiedDataTableProps {
    * @param row
    */
   getRowIndicator?: ColorIndicatorControlColumnParams['getRowIndicator'];
-  /**
-   *
-   * this callback is triggered when user navigates to a different page
-   *
-   */
-  onChangePage?: (pageIndex: number) => void;
 }
 
 export const EuiDataGridMemoized = React.memo(EuiDataGrid);
@@ -470,6 +471,7 @@ export const UnifiedDataTable = ({
   isPlainRecord = false,
   rowsPerPageState,
   onUpdateRowsPerPage,
+  onUpdatePageIndex,
   onFieldEdited,
   services,
   renderCustomGridBody,
@@ -499,7 +501,6 @@ export const UnifiedDataTable = ({
   getRowIndicator,
   dataGridDensityState,
   onUpdateDataGridDensity,
-  onChangePage: onChangePageProp,
 }: UnifiedDataTableProps) => {
   const { fieldFormats, toastNotifications, dataViewFieldEditor, uiSettings, storage, data } =
     services;
@@ -603,73 +604,41 @@ export const UnifiedDataTable = ({
     typeof rowsPerPageState === 'number' && rowsPerPageState > 0
       ? rowsPerPageState
       : DEFAULT_ROWS_PER_PAGE;
-  const [pagination, setPagination] = useState({
-    pageIndex: 0,
-    pageSize: currentPageSize,
-  });
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const rowCount = useMemo(() => (displayedRows ? displayedRows.length : 0), [displayedRows]);
   const pageCount = useMemo(
-    () => Math.ceil(rowCount / pagination.pageSize),
-    [rowCount, pagination]
+    () => Math.ceil(rowCount / currentPageSize),
+    [currentPageSize, rowCount]
   );
 
-  const paginationObj = useMemo(() => {
+  const pagination = useMemo<EuiDataGridPaginationProps | undefined>(() => {
     const onChangeItemsPerPage = (pageSize: number) => {
       onUpdateRowsPerPage?.(pageSize);
     };
 
     const onChangePage = (pageIndex: number) => {
-      setPagination((paginationData) => ({ ...paginationData, pageIndex }));
+      setCurrentPageIndex(pageIndex);
+      onUpdatePageIndex?.(pageIndex);
     };
 
     return isPaginationEnabled
       ? {
           onChangeItemsPerPage,
           onChangePage,
-          pageIndex: pagination.pageIndex > pageCount - 1 ? 0 : pagination.pageIndex,
-          pageSize: pagination.pageSize,
-          pageSizeOptions: rowsPerPageOptions ?? getRowsPerPageOptions(pagination.pageSize),
+          pageIndex: currentPageIndex > pageCount - 1 ? 0 : currentPageIndex,
+          pageSize: currentPageSize,
+          pageSizeOptions: rowsPerPageOptions ?? getRowsPerPageOptions(currentPageSize),
         }
       : undefined;
   }, [
+    currentPageIndex,
+    currentPageSize,
     isPaginationEnabled,
-    pagination.pageIndex,
-    pagination.pageSize,
+    onUpdatePageIndex,
+    onUpdateRowsPerPage,
     pageCount,
     rowsPerPageOptions,
-    onUpdateRowsPerPage,
   ]);
-
-  useEffect(() => {
-    /*
-     * Only for pageSize
-     * Sync pageSize with consumer provided pageSize
-     */
-    setPagination((paginationData) =>
-      paginationData.pageSize === currentPageSize
-        ? paginationData
-        : { ...paginationData, pageSize: currentPageSize }
-    );
-  }, [currentPageSize]);
-
-  useEffect(() => {
-    /*
-     * Only for pageIndex
-     * Sync pagination with EUI calculated pageIndex
-     *
-     */
-    setPagination((prevPagination) => ({
-      ...prevPagination,
-      pageIndex: paginationObj?.pageIndex ?? 0,
-    }));
-  }, [paginationObj?.pageIndex]);
-
-  useEffect(() => {
-    /*
-     * Propagate new pageIndex to the consumer
-     */
-    onChangePageProp?.(pagination.pageIndex);
-  }, [pagination.pageIndex, onChangePageProp]);
 
   const unifiedDataTableContextValue = useMemo<DataTableContext>(
     () => ({
@@ -683,8 +652,8 @@ export const UnifiedDataTable = ({
       valueToStringConverter,
       componentsTourSteps,
       isPlainRecord,
-      pageIndex: isPaginationEnabled ? paginationObj?.pageIndex : 0,
-      pageSize: isPaginationEnabled ? paginationObj?.pageSize : displayedRows.length,
+      pageIndex: isPaginationEnabled ? pagination?.pageIndex : 0,
+      pageSize: isPaginationEnabled ? pagination?.pageSize : displayedRows.length,
     }),
     [
       componentsTourSteps,
@@ -697,7 +666,7 @@ export const UnifiedDataTable = ({
       onFilter,
       setExpandedDoc,
       selectedDocsState,
-      paginationObj,
+      pagination,
       valueToStringConverter,
     ]
   );
@@ -1181,7 +1150,7 @@ export const UnifiedDataTable = ({
               data-test-subj="docTable"
               leadingControlColumns={leadingControlColumns}
               onColumnResize={onResize}
-              pagination={paginationObj}
+              pagination={pagination}
               renderCellValue={renderCellValue}
               ref={dataGridRef}
               rowCount={rowCount}
@@ -1210,7 +1179,7 @@ export const UnifiedDataTable = ({
               rowCount={rowCount}
               sampleSize={sampleSizeState}
               pageCount={pageCount}
-              pageIndex={paginationObj?.pageIndex}
+              pageIndex={pagination?.pageIndex}
               totalHits={totalHits}
               onFetchMoreRecords={onFetchMoreRecords}
               data={data}

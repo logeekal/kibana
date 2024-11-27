@@ -114,7 +114,7 @@ interface Props {
   dataView: DataView;
   trailingControlColumns?: EuiDataGridProps['trailingControlColumns'];
   leadingControlColumns?: EuiDataGridProps['leadingControlColumns'];
-  onChangePage?: UnifiedDataTableProps['onChangePage'];
+  onChangePage?: UnifiedDataTableProps['onUpdatePageIndex'];
 }
 
 const UnifiedTimelineComponent: React.FC<Props> = ({
@@ -444,7 +444,13 @@ const UnifiedTimelineComponent: React.FC<Props> = ({
                       onFilter={onAddFilter as DocViewFilterFn}
                       trailingControlColumns={trailingControlColumns}
                       leadingControlColumns={leadingControlColumns}
-                      onChangePage={onChangePage}
+                      onUpdatePageIndex={useCallback(
+                        (pageIndex: number) => {
+                          console.log('pageIndex', pageIndex);
+                          onChangePage?.(pageIndex);
+                        },
+                        [onChangePage]
+                      )}
                     />
                   </EventDetailsWidthProvider>
                 </DropOverlayWrapper>
