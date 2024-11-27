@@ -444,13 +444,7 @@ const UnifiedTimelineComponent: React.FC<Props> = ({
                       onFilter={onAddFilter as DocViewFilterFn}
                       trailingControlColumns={trailingControlColumns}
                       leadingControlColumns={leadingControlColumns}
-                      onUpdatePageIndex={useCallback(
-                        (pageIndex: number) => {
-                          console.log('pageIndex', pageIndex);
-                          onChangePage?.(pageIndex);
-                        },
-                        [onChangePage]
-                      )}
+                      onUpdatePageIndex={onChangePage}
                     />
                   </EventDetailsWidthProvider>
                 </DropOverlayWrapper>
