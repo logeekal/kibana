@@ -27,6 +27,7 @@ import {
   SIEM_RULE_MIGRATION_MISSING_PRIVILEGES_PATH,
   SIEM_RULE_MIGRATION_RULES_PATH,
   SIEM_RULE_MIGRATIONS_INTEGRATIONS_STATS_PATH,
+  SIEM_RULE_MIGRATION_PATH,
 } from '../../../../common/siem_migrations/constants';
 import type {
   CreateRuleMigrationResponse,
@@ -356,5 +357,18 @@ export const updateMigrationRules = async ({
   return KibanaServices.get().http.patch<UpdateRuleMigrationResponse>(
     replaceParams(SIEM_RULE_MIGRATION_RULES_PATH, { migration_id: migrationId }),
     { version: '1', body: JSON.stringify(rulesToUpdate), signal }
+  );
+};
+
+export interface DeleteRuleMigrationParams {
+  /** `id` of the migration to delete */
+  migrationId: string;
+  /** Optional AbortSignal for cancelling request */
+  signal?: AbortSignal;
+}
+export const deleteRuleMigration = async ({ migrationId, signal }: DeleteRuleMigrationParams) => {
+  return KibanaServices.get().http.delete<void>(
+    replaceParams(SIEM_RULE_MIGRATION_PATH, { migration_id: migrationId }),
+    { version: '1', signal }
   );
 };
