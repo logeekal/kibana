@@ -74,6 +74,11 @@ export const AGENT_BUILDER_BUILTIN_TOOLS = [
   `${internalNamespaces.security}.siem_readiness.get_retention`,
   `${internalNamespaces.security}.alert-triage`,
 
+  // Security - SIEM Migration
+  `${internalNamespaces.security}.siem_migration.get_migrations`,
+  `${internalNamespaces.security}.siem_migration.get_migration_rules`,
+  `${internalNamespaces.security}.siem_migration.update_migration_rule`,
+
   // Streams
   `${internalNamespaces.streams}.inspect_streams`,
   `${internalNamespaces.streams}.diagnose_stream`,
