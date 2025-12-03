@@ -148,6 +148,7 @@ import { getCriblPackagePolicyPostCreateOrUpdateCallback } from './security_inte
 import { scheduleEntityAnalyticsMigration } from './lib/entity_analytics/migrations';
 import { SiemMigrationsService } from './lib/siem_migrations/siem_migrations_service';
 import { SIEM_MIGRATION_INFERENCE_FEATURE_ID } from '../common/siem_migrations/constants';
+import { registerSiemMigrationAgent } from './lib/siem_migrations/agent';
 import { TelemetryConfigProvider } from '../common/telemetry_config/telemetry_config_provider';
 import { TelemetryConfigWatcher } from './endpoint/lib/policy/telemetry_watch';
 import { threatIntelligenceSearchStrategyProvider } from './threat_intelligence/search_strategy';
@@ -753,6 +754,16 @@ export class Plugin implements ISecuritySolutionPlugin {
       .catch(() => {}); // it shouldn't reject, but just in case
 
     setIsElasticCloudDeployment(plugins.cloud.isCloudEnabled ?? false);
+
+    // Register SIEM Migration Agent with Agent Builder
+    if (plugins.agentBuilder) {
+      registerSiemMigrationAgent({
+        agentBuilder: plugins.agentBuilder,
+        logger: this.logger.get('siemMigrationAgent'),
+      }).catch((error) => {
+        this.logger.error(`Error registering SIEM Migration Agent: ${error}`);
+      });
+    }
 
     this.asyncTelemetryEventsSender.setup(
       DEFAULT_RETRY_CONFIG,
