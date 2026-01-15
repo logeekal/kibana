@@ -23,6 +23,8 @@ import { createTracersCallbacks } from '../../common/api/util/tracing';
 
 export const SIEM_MIGRATION_START_MIGRATION_TOOL_ID = 'security.siem_migration.start_migration';
 
+const startMigrationSchema = StartRuleMigrationRequestParams.merge(StartRuleMigrationRequestBody);
+
 /**
  * Tool to start a SIEM migration or retry migration for single or multiple rules.
  * This tool can start a new migration or retry failed/partially translated/selected rules.
@@ -32,11 +34,8 @@ export function createStartMigrationTool(
   getClient: SiemMigrationsClientGetter,
   core: CoreSetup<SecuritySolutionPluginStartDependencies, SecuritySolutionPluginStart>,
   logger: Logger
-): StaticToolRegistration<
-  typeof StartRuleMigrationRequestBody & typeof StartRuleMigrationRequestParams
-> {
+): StaticToolRegistration<typeof startMigrationSchema> {
   // Create a schema that combines params and body
-  const startMigrationSchema = StartRuleMigrationRequestParams.merge(StartRuleMigrationRequestBody);
 
   return {
     id: SIEM_MIGRATION_START_MIGRATION_TOOL_ID,
@@ -65,7 +64,29 @@ export function createStartMigrationTool(
         const actionsClient = await plugins.actions.getActionsClientWithRequest(context.request);
 
         // Check if the connector exists and user has permissions to read it
-        const connector = await actionsClient.get({ id: connector_id });
+        let connector;
+        try {
+          connector = await actionsClient.get({ id: connector_id });
+        } catch (error) {
+          // Handle case where connector doesn't exist or user doesn't have permission
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          if (errorMessage.includes('not found') || errorMessage.includes('Saved object')) {
+            return {
+              results: [
+                {
+                  type: ToolResultType.error,
+                  data: {
+                    message: `Connector with id ${connector_id} not found. Please verify the connector ID is correct and that you have permission to access it.`,
+                  },
+                },
+              ],
+            };
+          }
+          // Re-throw other errors
+          throw error;
+        }
+
         if (!connector) {
           return {
             results: [

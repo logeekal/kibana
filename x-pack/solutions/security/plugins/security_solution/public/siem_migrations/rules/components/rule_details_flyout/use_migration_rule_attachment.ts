@@ -36,12 +36,7 @@ export const useMigrationRuleAttachment = (
 
   const attachmentPrompt = useMemo(
     () =>
-      "I've attached a SIEM migration rule. What would you like to do with it?\n\n" +
-      'For example:\n' +
-      '- Help me understand the translation\n' +
-      '- Explain the differences between the original and translated query\n' +
-      '- Suggest improvements to the ES|QL query\n' +
-      '- Help me modify the rule',
+      `A migration rule item has been attached. it repesents \`original_rule\` and \`elastic_rule\` which represent vendor rule and converted Elastic-like ESQL rule. Describe to the user your evaulation about the conversion and ask them what they would like to do next. Explain all the capabilities you have based on the tools available.`,
     []
   );
 

@@ -257,10 +257,9 @@ export const performRuleUpgradeHandler = async (
     allErrors.push(...aggregatePrebuiltRuleErrors(ruleErrors));
 
     if (!isDryRun) {
-      const { error: timelineInstallationError } = await performTimelinesInstallation({
-        maxTimelineImportExportSize: ctx.securitySolution.getConfig().maxTimelineImportExportSize,
-        frameworkRequest: ctx.securitySolution.getFrameworkRequest(),
-      });
+      const { error: timelineInstallationError } = await performTimelinesInstallation(
+        ctx.securitySolution
+      );
 
       if (timelineInstallationError) {
         allErrors.push({

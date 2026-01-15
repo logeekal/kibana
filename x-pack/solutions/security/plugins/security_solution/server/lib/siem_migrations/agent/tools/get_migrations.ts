@@ -44,6 +44,7 @@ export function createGetMigrationsTool(
           rules: stat.items,
           created_at: stat.created_at,
           last_updated_at: stat.last_updated_at,
+          last_execution: stat.last_execution,
         }));
 
         return {

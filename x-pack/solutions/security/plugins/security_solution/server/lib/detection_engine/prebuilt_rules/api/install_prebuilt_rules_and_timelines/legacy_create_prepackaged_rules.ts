@@ -88,10 +88,7 @@ export const legacyCreatePrepackagedRules = async (
     throw new AggregateError(ruleCreationResult.errors, 'Error installing new prebuilt rules');
   }
 
-  const { result: timelinesResult } = await performTimelinesInstallation({
-    maxTimelineImportExportSize: context.getConfig().maxTimelineImportExportSize,
-    frameworkRequest: context.getFrameworkRequest(),
-  });
+  const { result: timelinesResult } = await performTimelinesInstallation(context);
 
   const upgradeChangeTracking = {
     metadata: {

@@ -759,15 +759,10 @@ export class Plugin implements ISecuritySolutionPlugin {
     // Register SIEM Migration Agent with Agent Builder
     if (plugins.agentBuilder) {
       registerSiemMigrationTools({
-        plugins: {
-          ...plugins,
-        },
+        agentBuilder: plugins.agentBuilder,
         core,
         siemMigrationsService: this.siemMigrationsService,
         logger: this.logger.get('siemMigrationAgent'),
-        requestContextFactory,
-        productFeaturesService,
-        config: this.config
       }).catch((error) => {
         this.logger.error(`Error registering SIEM Migration Agent: ${error}`);
       });

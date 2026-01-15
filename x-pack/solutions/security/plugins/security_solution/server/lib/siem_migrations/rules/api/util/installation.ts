@@ -7,10 +7,10 @@
 
 import type { SavedObjectsClientContract } from '@kbn/core/server';
 import type { RulesClient } from '@kbn/alerting-plugin/server';
-import type { SecuritySolutionRequestHandlerContext } from '../../../../../types';
 import { getErrorMessage } from '../../../../../utils/error_helpers';
 import type { UpdateRuleMigrationRule } from '../../../../../../common/siem_migrations/model/rule_migration.gen';
 import { initPromisePool } from '../../../../../utils/promise_pool';
+import type { SecuritySolutionApiRequestHandlerContext } from '../../../../..';
 import { performTimelinesInstallation } from '../../../../detection_engine/prebuilt_rules/logic/perform_timelines_installation';
 import { createPrebuiltRules } from '../../../../detection_engine/prebuilt_rules/logic/rule_objects/create_prebuilt_rules';
 import type { IDetectionRulesClient } from '../../../../detection_engine/rule_management/logic/detection_rules_client/detection_rules_client_interface';
@@ -23,13 +23,13 @@ import {
   isMigrationCustomRule,
 } from '../../../../../../common/siem_migrations/rules/utils';
 import { getVendorTag } from '../../../common/api/util/tags';
-import type { SiemRuleMigrationsClient } from '../../siem_rule_migrations_service';
 
 const MAX_CUSTOM_RULES_TO_CREATE_IN_PARALLEL = 50;
 
 const installPrebuiltRules = async (
   rulesToInstall: StoredRuleMigrationRule[],
   enabled: boolean,
+  securitySolutionContext: SecuritySolutionApiRequestHandlerContext,
   rulesClient: RulesClient,
   savedObjectsClient: SavedObjectsClientContract,
   detectionRulesClient: IDetectionRulesClient
@@ -150,36 +150,33 @@ interface InstallTranslatedProps {
    */
   enabled: boolean;
 
-  deps: {
-    detectionRulesClient: IDetectionRulesClient;
-    ruleMigrationsClient: SiemRuleMigrationsClient;
-    getConfig: SecuritySolutionRequestHandlerContext['getConfig'];
-    getFrameworkRequest: SecuritySolutionRequestHandlerContext['getFrameworkRequest'];
-    /**
-     * The rules client to create rules
-     */
-    rulesClient: RulesClient;
+  /**
+   * The security solution context
+   */
+  securitySolutionContext: SecuritySolutionApiRequestHandlerContext;
 
-    /**
-     * The saved objects client
-     */
-    savedObjectsClient: SavedObjectsClientContract;
-  };
+  /**
+   * The rules client to create rules
+   */
+  rulesClient: RulesClient;
+
+  /**
+   * The saved objects client
+   */
+  savedObjectsClient: SavedObjectsClientContract;
 }
 
 export const installTranslated = async ({
   migrationId,
   ids,
   enabled,
-  deps: {
-    detectionRulesClient,
-    ruleMigrationsClient,
-    savedObjectsClient,
-    rulesClient,
-    getConfig,
-    getFrameworkRequest,
-  },
+  securitySolutionContext,
+  rulesClient,
+  savedObjectsClient,
 }: InstallTranslatedProps): Promise<number> => {
+  const detectionRulesClient = securitySolutionContext.getDetectionRulesClient();
+  const ruleMigrationsClient = securitySolutionContext.siemMigrations.getRulesClient();
+
   let installedCount = 0;
   const installationErrors: Error[] = [];
 
@@ -192,6 +189,7 @@ export const installTranslated = async ({
     const { rulesToUpdate, errors } = await installPrebuiltRules(
       prebuiltRulesToInstall,
       enabled,
+      securitySolutionContext,
       rulesClient,
       savedObjectsClient,
       detectionRulesClient
@@ -204,10 +202,7 @@ export const installTranslated = async ({
 
   let installTimelinesError: string | undefined;
   if (installedCount > 0) {
-    const { error } = await performTimelinesInstallation({
-      maxTimelineImportExportSize: getConfig().maxTimelineImportExportSize,
-      frameworkRequest: getFrameworkRequest(),
-    });
+    const { error } = await performTimelinesInstallation(securitySolutionContext);
     installTimelinesError = error;
   }
 

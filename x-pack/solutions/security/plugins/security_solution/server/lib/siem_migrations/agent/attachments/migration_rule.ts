@@ -8,6 +8,7 @@
 import { z } from '@kbn/zod';
 import type { CoreSetup, Logger } from '@kbn/core/server';
 import type { AttachmentTypeDefinition } from '@kbn/agent-builder-server/attachments';
+import type { Attachment } from '@kbn/agent-builder-common/attachments';
 import { ToolType } from '@kbn/agent-builder-common';
 import { ToolResultType } from '@kbn/agent-builder-common/tools/tool_result';
 import { SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID } from '../../../../../common/constants';
@@ -26,6 +27,13 @@ const migrationRuleAttachmentDataSchema = z.object({
 
 export type MigrationRuleAttachmentData = z.infer<typeof migrationRuleAttachmentDataSchema>;
 
+/**
+ * Type guard to narrow attachment data to MigrationRuleAttachmentData
+ */
+const isMigrationRuleAttachmentData = (data: unknown): data is MigrationRuleAttachmentData => {
+  return migrationRuleAttachmentDataSchema.safeParse(data).success;
+};
+
 export function createMigrationRuleAttachmentType({
   core,
   logger,
@@ -34,10 +42,7 @@ export function createMigrationRuleAttachmentType({
   core: CoreSetup<SecuritySolutionPluginStartDependencies, SecuritySolutionPluginStart>;
   logger: Logger;
   getClient: SiemMigrationsClientGetter;
-}): AttachmentTypeDefinition<
-  typeof SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID,
-  MigrationRuleAttachmentData
-> {
+}): AttachmentTypeDefinition {
   return {
     id: SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID,
     validate: (input) => {
@@ -47,8 +52,15 @@ export function createMigrationRuleAttachmentType({
       }
       return { valid: false, error: parsed.error.message };
     },
-    format: (attachment, context) => {
-      const { migration_id, rule_id } = attachment.data;
+    format: (attachment: Attachment<string, unknown>, context) => {
+      // Extract data to allow proper type narrowing
+      const data = attachment.data;
+      // Necessary because we cannot currently use the AttachmentType type as agent is not
+      // registered with enum AttachmentType in agentBuilder attachment_types.ts
+      if (!isMigrationRuleAttachmentData(data)) {
+        throw new Error(`Invalid migration rule attachment data for attachment ${attachment.id}`);
+      }
+      const { migration_id, rule_id } = data;
 
       return {
         getRepresentation: async () => {

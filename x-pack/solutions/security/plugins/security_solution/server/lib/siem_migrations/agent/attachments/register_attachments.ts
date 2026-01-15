@@ -7,11 +7,11 @@
 
 import type { CoreSetup, Logger } from '@kbn/core/server';
 import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server';
-import type { SiemMigrationsService } from '../../siem_migrations_service';
 import type {
-  SecuritySolutionPluginStart,
   SecuritySolutionPluginStartDependencies,
-} from '../../../plugin_contract';
+  SecuritySolutionPluginStart,
+} from '../../../../plugin_contract';
+import type { SiemMigrationsService } from '../../siem_migrations_service';
 import { createSiemMigrationsClientFactory } from '../tools/create_client_factory';
 import { createMigrationRuleAttachmentType } from './migration_rule';
 

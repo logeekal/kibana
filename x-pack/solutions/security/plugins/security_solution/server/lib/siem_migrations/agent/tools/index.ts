@@ -24,23 +24,26 @@ import {
   SIEM_MIGRATION_UPDATE_RULE_TOOL_ID,
 } from './update_migration_rule';
 
-import {
-  createInstallMigrationRulesTool,
-  SIEM_MIGRATION_INSTALL_RULES_TOOL_ID,
-} from './install_migration_rules';
+import { createInstallMigrationRulesTool } from './install_migration_rules';
 
 import {
   createStartMigrationTool,
   SIEM_MIGRATION_START_MIGRATION_TOOL_ID,
 } from './start_migration';
 
+import {
+  createListConnectorsTool,
+  SIEM_MIGRATION_LIST_CONNECTORS_TOOL_ID,
+} from './list_connectors';
+
 // All SIEM migration tool IDs for agent configuration
 export const SIEM_MIGRATION_TOOL_IDS = [
   SIEM_MIGRATION_GET_MIGRATIONS_TOOL_ID,
   SIEM_MIGRATION_GET_RULES_TOOL_ID,
   SIEM_MIGRATION_UPDATE_RULE_TOOL_ID,
-  SIEM_MIGRATION_INSTALL_RULES_TOOL_ID,
+  // SIEM_MIGRATION_INSTALL_RULES_TOOL_ID,
   SIEM_MIGRATION_START_MIGRATION_TOOL_ID,
+  SIEM_MIGRATION_LIST_CONNECTORS_TOOL_ID,
 ];
 
 export {
@@ -49,4 +52,5 @@ export {
   createUpdateMigrationRuleTool,
   createInstallMigrationRulesTool,
   createStartMigrationTool,
+  createListConnectorsTool,
 };

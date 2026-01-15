@@ -7,19 +7,15 @@
 
 import { stringifyZodError } from '@kbn/zod-helpers/v4';
 import { ImportTimelineResult } from '../../../../../common/api/timeline';
+import type { SecuritySolutionApiRequestHandlerContext } from '../../../../types';
 import { installPrepackagedTimelines } from '../../../timeline/routes/prepackaged_timelines/install_prepackaged_timelines';
-import type { FrameworkRequest } from '../../../framework';
 
-export const performTimelinesInstallation = async ({
-  maxTimelineImportExportSize,
-  frameworkRequest,
-}: {
-  maxTimelineImportExportSize: number;
-  frameworkRequest: FrameworkRequest;
-}) => {
+export const performTimelinesInstallation = async (
+  securitySolutionContext: SecuritySolutionApiRequestHandlerContext
+) => {
   const timeline = await installPrepackagedTimelines(
-    maxTimelineImportExportSize,
-    frameworkRequest,
+    securitySolutionContext.getConfig()?.maxTimelineImportExportSize,
+    securitySolutionContext.getFrameworkRequest(),
     true
   );
   const parsed = ImportTimelineResult.safeParse(timeline);
