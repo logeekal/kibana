@@ -7,7 +7,6 @@
 
 import type { CoreSetup, Logger } from '@kbn/core/server';
 import { platformCoreTools } from '@kbn/agent-builder-common';
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-server';
 import type { SiemMigrationsService } from '../siem_migrations_service';
 import type {
   SecuritySolutionPluginStart,
@@ -15,11 +14,16 @@ import type {
 } from '../../../plugin_contract';
 import {
   createSiemMigrationsClientFactory,
+  createSecuritySolutionContextFactory,
   createGetMigrationsTool,
   createGetMigrationRulesTool,
   createUpdateMigrationRuleTool,
+  createInstallMigrationRulesTool,
+  createStartMigrationTool,
   SIEM_MIGRATION_TOOL_IDS,
 } from './tools';
+import type { IRequestContextFactory } from '../../../request_context_factory';
+import type { ProductFeaturesService } from '../../product_features_service';
 
 export const SIEM_MIGRATION_AGENT_ID = 'security.siem_migration';
 
@@ -36,21 +40,31 @@ const PLATFORM_TOOL_IDS = [
 // All tools available to the SIEM Migration Agent
 const SIEM_MIGRATION_AGENT_TOOL_IDS = [...PLATFORM_TOOL_IDS, ...SIEM_MIGRATION_TOOL_IDS];
 
-export async function registerSiemMigrationAgent({
-  agentBuilder,
+export async function registerSiemMigrationTools({
   core,
-  siemMigrationsService,
-  logger,
+  deps: { plugins, siemMigrationsService, productFeaturesService },
 }: {
-  agentBuilder: AgentBuilderPluginSetup;
   core: CoreSetup<SecuritySolutionPluginStartDependencies, SecuritySolutionPluginStart>;
-  siemMigrationsService: SiemMigrationsService;
+  deps: {
+    plugins: SecuritySolutionPluginStartDependencies;
+    siemMigrationsService: SiemMigrationsService;
+    productFeaturesService: ProductFeaturesService;
+  };
   logger: Logger;
+  requestContextFactory: IRequestContextFactory;
 }) {
+  const { agentBuilder } = plugins;
   // Create client factory that tools will use to get scoped clients
   const getClient = createSiemMigrationsClientFactory({
     core,
     siemMigrationsService,
+  });
+
+  // Create Security Solution context factory for tools that need it
+  const getSecuritySolutionContext = createSecuritySolutionContextFactory({
+    core,
+    plugins,
+    requestContextFactory,
   });
 
   // Register SIEM migration tools
@@ -58,6 +72,8 @@ export async function registerSiemMigrationAgent({
     createGetMigrationsTool(getClient),
     createGetMigrationRulesTool(getClient),
     createUpdateMigrationRuleTool(getClient),
+    createInstallMigrationRulesTool(getSecuritySolutionContext),
+    createStartMigrationTool(getClient, core, logger),
   ];
 
   for (const tool of tools) {

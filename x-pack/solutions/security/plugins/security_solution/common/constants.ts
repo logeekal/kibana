@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import { internalNamespaces } from '@kbn/agent-builder-common/base/namespaces';
 import { RuleNotifyWhen } from '@kbn/alerting-plugin/common';
 import {
   RULES_FEATURE_LATEST,
@@ -751,3 +752,11 @@ export enum SecurityAgentBuilderAttachments {
 }
 
 export const SECURITY_RULE_ATTACHMENT_ID = 'ai-rule-creation';
+
+export const REGISTER_ALERT_VALIDATION_STEPS_FEATURE_FLAG =
+  'securitySolution.registerAlertValidationStepsEnabled' as const;
+export const REGISTER_ALERT_VALIDATION_STEP_FEATURE_FLAG_DEFAULT = false as const;
+
+export const SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID = 'security.siem_migration.rule' as const;
+
+export const THREAT_HUNTING_AGENT_ID = `${internalNamespaces.security}.agent`;

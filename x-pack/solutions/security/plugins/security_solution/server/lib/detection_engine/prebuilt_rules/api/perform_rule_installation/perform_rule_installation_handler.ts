@@ -138,9 +138,10 @@ export const performRuleInstallationHandler = async (
       );
     }
 
-    const { error: timelineInstallationError } = await performTimelinesInstallation(
-      ctx.securitySolution
-    );
+    const { error: timelineInstallationError } = await performTimelinesInstallation({
+      maxTimelineImportExportSize: ctx.securitySolution.getConfig().maxTimelineImportExportSize,
+      frameworkRequest: ctx.securitySolution.getFrameworkRequest(),
+    });
 
     const allErrors = aggregatePrebuiltRuleErrors(ruleErrors);
     if (timelineInstallationError) {
