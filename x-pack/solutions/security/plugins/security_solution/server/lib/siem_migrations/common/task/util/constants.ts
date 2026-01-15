@@ -14,6 +14,7 @@ export const SYSTEM_INSTRUCTIONS = `
 ### General Guidelines
 1. Do not use quotes for variables or aliases, replace any in the original with snake cased aliases. Only use quotes when necessary as a string literal.
 2. Never add quotes or ticks to index names.
+3. When generating a translation summary. Always provide a checklist of input vs what was translated. If anything was missed, provide explanation as to why.
 
 \`\`\`
 

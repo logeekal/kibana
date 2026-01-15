@@ -29,9 +29,9 @@ This is going to be a detailed summary of the translation process, including any
   ],
   [
     'user',
-    `Translate the following Natural Language query into an ESQL query.\n 
-    --- 
-    \n 
+    `Translate the following Natural Language query into an ESQL query.\n
+    ---
+    \n
     {nl_query}
     \n
     ------------
@@ -44,9 +44,12 @@ export const NL_TO_ESQL_INDEX_PATTERN_PROMPT = ChatPromptTemplate.fromMessages<{
 }>([
   [
     'system',
-    `When translating a Natural Language query into an ESQL query,  give preference to below provided index pattern.
-    
-    Index Pattern: {index_pattern}  
+    `When translating a Natural Language query into an ESQL query,  give preference to below provided index pattern. Its fields metadata is also provided. Use that information to guide your translation.
+     If you do not find any fields, use ECS fields names.
+
+
+    Index Pattern: {index_pattern}
+    Fields Metadata: {fields_metadata}
 
 `,
   ],
