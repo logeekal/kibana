@@ -56,7 +56,7 @@ export class RuleMigrationTaskRunner extends SiemMigrationTaskRunner<
 
   /** Retrieves the connector and creates the migration agent */
   public async setup(connectorId: string): Promise<void> {
-    const { inferenceService } = this.dependencies;
+    const { inferenceService, agentBuilder } = this.dependencies;
 
     const model = await this.actionsClientChat.createModel({
       connectorId,
@@ -84,6 +84,37 @@ export class RuleMigrationTaskRunner extends SiemMigrationTaskRunner<
       inferenceService.getClient({ request: this.request }),
       this.logger
     );
+
+    // Fetch platform tools (indexExplorer, getIndexMapping) from Agent Builder
+    // let platformTools: StructuredToolInterface[] = [];
+    // this.logger.info(`Fetching platform tools for ESQL generation from Agent Builder`);
+    // if (agentBuilder) {
+    //   try {
+    //     const toolRegistry = await agentBuilder.tools.getRegistry({ request: this.request });
+    //     const allTools = await toolRegistry.list({ request: this.request });
+    //
+    //     // Filter for the specific platform tools we need
+    //     const selectedTools = filterToolsBySelection(allTools, [
+    //       {
+    //         tool_ids: [platformCoreTools.getIndexMapping],
+    //       },
+    //     ]);
+    //
+    //     // Convert Agent Builder tools to Langchain format
+    //     const { tools: langchainTools } = await toolsToLangchain({
+    //       request: this.request,
+    //       tools: selectedTools,
+    //       logger: this.logger,
+    //     });
+    //
+    //     platformTools = langchainTools;
+    //     this.logger.info(`Fetched ${platformTools.length} platform tools for ESQL generation`);
+    //   } catch (error) {
+    //     this.logger.warn(
+    //       `Failed to fetch platform tools: ${error}. Continuing without platform tools.`
+    //     );
+    //   }
+    // }
 
     const agent = getRuleMigrationAgent({
       esqlKnowledgeBase,

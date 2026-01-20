@@ -27,10 +27,6 @@ export const migrateRuleState = Annotation.Root({
     reducer: (current, value) => value ?? current,
     default: () => '',
   }),
-  inline_query: Annotation<string>({
-    reducer: (current, value) => value ?? current,
-    default: () => '',
-  }),
   translation_result: Annotation<MigrationTranslationResult>(),
   comments: Annotation<RuleMigrationRule['comments']>({
     // Translation subgraph causes the original main graph comments to be concatenated again, we need to deduplicate them.

@@ -5,13 +5,8 @@
  * 2.0.
  */
 
-import type { MigrationComments } from '../../../../../../../../../../common/siem_migrations/model/common.gen';
 import { getNLToESQLQuery } from '../../../../../../../common/task/agent/helpers/translate_nl_to_esql/translate_nl_to_esql';
-import {
-  getTranslateSplToEsql,
-  TASK_DESCRIPTION,
-  type GetTranslateSplToEsqlParams,
-} from '../../../../../../../common/task/agent/helpers/translate_spl_to_esql';
+import { type GetTranslateSplToEsqlParams } from '../../../../../../../common/task/agent/helpers/translate_spl_to_esql';
 import type { GraphNode } from '../../types';
 import {
   getElasticRiskScoreFromOriginalRule,
@@ -20,7 +15,6 @@ import {
 
 export const getTranslateRuleNode = (params: GetTranslateSplToEsqlParams): GraphNode => {
   const nlToESQLQuery = getNLToESQLQuery(params);
-  const translateSplToEsql = getTranslateSplToEsql(params);
   return async (state) => {
     const vendor = state.original_rule.vendor;
 
@@ -28,32 +22,13 @@ export const getTranslateRuleNode = (params: GetTranslateSplToEsqlParams): Graph
       ?.map((dataStream) => dataStream.index_pattern)
       .join(',');
 
-    const fieldsMetadata = state.integration?.fields_metadata;
-
-    let esqlQuery: string | undefined;
-    let comments: MigrationComments = [];
-
-    if (vendor === 'qradar') {
-      params.logger.debug(
-        `Translating rule "${state.original_rule.title}" using NL to ESQL for vendor: ${vendor}`
-      );
-      ({ esqlQuery, comments } = await nlToESQLQuery({
-        query: state.nl_query,
-        indexPattern: indexPatterns,
-        fieldsMetadata,
-      }));
-    } else {
-      params.logger.debug(
-        `Translating rule "${state.original_rule.title}" using SPL to ESQL for vendor: ${vendor}`
-      );
-      ({ esqlQuery, comments } = await translateSplToEsql({
-        title: state.original_rule.title,
-        taskDescription: TASK_DESCRIPTION.migrate_rule,
-        description: state.original_rule.description,
-        inlineQuery: state.inline_query,
-        indexPattern: indexPatterns,
-      }));
-    }
+    params.logger.debug(
+      `Translating rule "${state.original_rule.title}" using NL to ESQL for vendor: ${vendor}`
+    );
+    const { esqlQuery, comments } = await nlToESQLQuery({
+      query: state.nl_query,
+      indexPattern: indexPatterns,
+    });
 
     if (!esqlQuery) {
       return { comments };

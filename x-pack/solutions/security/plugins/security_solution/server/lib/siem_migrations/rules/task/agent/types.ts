@@ -10,6 +10,7 @@ import type { Runnable, RunnableConfig } from '@langchain/core/runnables';
 import type { InferenceChatModelCallOptions } from '@kbn/inference-langchain';
 import type { AIMessageChunk } from '@langchain/core/messages';
 import type { BaseLanguageModelInput } from '@langchain/core/language_models/base';
+import type { StructuredToolInterface } from '@langchain/core/tools';
 import type { RuleMigrationsRetriever } from '../retrievers';
 import type { EsqlKnowledgeBase } from '../../../common/task/util/esql_knowledge_base';
 import type { ChatModel } from '../../../common/task/util/actions_client_chat';
@@ -42,4 +43,5 @@ export interface MigrateRuleGraphParams {
   logger: Logger;
   telemetryClient: RuleMigrationTelemetryClient;
   tools: RulesMigrationTools;
+  platformTools?: StructuredToolInterface[]; // Platform tools: indexExplorer, getIndexMapping
 }

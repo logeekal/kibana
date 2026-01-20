@@ -10,7 +10,7 @@ The `LOOKUP JOIN` command combines data from a query results table with matching
 
 #### lookup_index
 
-The name of the lookup index. This must be a specific index name—wildcards, aliases, and remote cluster references are not supported. Indices used for lookups must be configured with the `lookup` mode.
+The name of the lookup index. This must be a specific index name—wildcards, aliases, and remote cluster references are not supported. Indices used for lookups must be configured with the `lookup` mode. The exact syntax of join condition depends on the field names ( part of mapping) in lookup index.
 
 #### join_condition
 

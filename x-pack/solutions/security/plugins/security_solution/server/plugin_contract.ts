@@ -45,7 +45,10 @@ import type { SharePluginSetup, SharePluginStart } from '@kbn/share-plugin/serve
 import type { PluginSetup as UnifiedSearchServerPluginSetup } from '@kbn/unified-search-plugin/server';
 import type { ElasticAssistantPluginStart } from '@kbn/elastic-assistant-plugin/server';
 import type { InferenceServerStart } from '@kbn/inference-plugin/server';
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server';
+import type {
+  AgentBuilderPluginSetup,
+  AgentBuilderPluginStart,
+} from '@kbn/agent-builder-plugin/server';
 import type { LlmTasksPluginStart } from '@kbn/llm-tasks-plugin/server';
 import type { ProductFeaturesService } from './lib/product_features_service/product_features_service';
 import type { ExperimentalFeatures } from '../common';
@@ -94,6 +97,7 @@ export interface SecuritySolutionPluginStartDependencies {
   actions: ActionsPluginStartContract;
   inference: InferenceServerStart;
   llmTasks?: LlmTasksPluginStart;
+  agentBuilder: AgentBuilderPluginStart;
 }
 
 export interface SecuritySolutionPluginSetup {
@@ -108,7 +112,7 @@ export interface SecuritySolutionPluginSetup {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
-export interface SecuritySolutionPluginStart {}
+export interface SecuritySolutionPluginStart { }
 
 export type SecuritySolutionPluginCoreSetupDependencies = CoreSetup<
   SecuritySolutionPluginStartDependencies,

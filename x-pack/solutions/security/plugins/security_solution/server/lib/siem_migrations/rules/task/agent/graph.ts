@@ -6,15 +6,22 @@
  */
 
 import { END, START, StateGraph } from '@langchain/langgraph';
-import { ToolNode } from '@langchain/langgraph/prebuilt';
-import { getCreateSemanticQueryNode } from './nodes/create_semantic_query';
 import { getMatchPrebuiltRuleNode } from './nodes/match_prebuilt_rule';
 import { migrateRuleConfigSchema, migrateRuleState } from './state';
 import { getTranslateRuleGraph } from './sub_graphs/translate_rule';
 import type { MigrateRuleConfig, MigrateRuleGraphParams, MigrateRuleState } from './types';
-import { getResolveDepsNode } from './nodes/resolve_dependencies_node/resolve_dependencies';
-import { getVendorRouter } from './edges/vendor_edge';
+import { getQueryToNaturalLanguageSubGraph } from './sub_graphs/query_to_natural_language';
+import { getGenerateSemanticQueryNode } from './nodes/generate_semantic_query';
 
+/**
+ * Simplified Rule Migration Graph
+ *
+ * Architecture:
+ * 1. QueryToNaturalLanguage (mini-subgraph) - Interprets query → nl_query
+ * 2. GenerateSemanticQuery - Generates semantic keywords from nl_query → semantic_query
+ * 3. PrebuiltRuleMatch - Matches against Elastic prebuilt rules
+ * 4. TranslateRule (subgraph) - Translates to ES|QL
+ */
 export function getRuleMigrationAgent({
   model,
   esqlKnowledgeBase,
@@ -22,6 +29,7 @@ export function getRuleMigrationAgent({
   logger,
   telemetryClient,
   tools,
+  platformTools = [],
 }: MigrateRuleGraphParams) {
   const matchPrebuiltRuleNode = getMatchPrebuiltRuleNode({
     model,
@@ -30,7 +38,14 @@ export function getRuleMigrationAgent({
     telemetryClient,
   });
 
-  const resolveDepsToolNode = new ToolNode([tools.getRulesByName, tools.getResourceByType]);
+  // Create the queryToNaturalLanguage subgraph (standalone, reusable)
+  const queryToNLSubGraph = getQueryToNaturalLanguageSubGraph({
+    model,
+    tools,
+  });
+
+  // Generate semantic query - vendor-agnostic, uses title, description, and nl_query
+  const generateSemanticQueryNode = getGenerateSemanticQueryNode({ model });
 
   const translationSubGraph = getTranslateRuleGraph({
     model,
@@ -39,33 +54,20 @@ export function getRuleMigrationAgent({
     telemetryClient,
     logger,
   });
-  const resolveDependenciesNode = getResolveDepsNode({
-    model: model.bindTools(Object.values(tools)),
-  });
-  const createSemanticQueryNode = getCreateSemanticQueryNode({ model });
 
   const siemMigrationAgentGraph = new StateGraph(migrateRuleState, migrateRuleConfigSchema)
     // Nodes
-    .addNode('resolveDependencies', resolveDependenciesNode)
-    .addNode('createSemanticQuery', createSemanticQueryNode)
-    .addNode('resolveDepsTools', resolveDepsToolNode)
+    .addNode('queryToNaturalLanguage', queryToNLSubGraph) // Subgraph as node
+    .addNode('generateSemanticQuery', generateSemanticQueryNode)
     .addNode('matchPrebuiltRule', matchPrebuiltRuleNode)
     .addNode('translationSubGraph', translationSubGraph)
     // Edges
-    .addConditionalEdges(START, getVendorRouter('qradar'), {
-      is_qradar: 'resolveDependencies',
-      is_not_qradar: 'createSemanticQuery',
+    .addEdge(START, 'queryToNaturalLanguage')
+    .addEdge('queryToNaturalLanguage', 'generateSemanticQuery')
+    .addConditionalEdges('generateSemanticQuery', skipPrebuiltRuleRouter, {
+      skipPrebuiltRule: 'translationSubGraph',
+      matchPrebuiltRule: 'matchPrebuiltRule',
     })
-    // .addEdge(START, 'createSemanticQuery')
-    .addConditionalEdges('resolveDependencies', toolRouter, {
-      hasToolCalls: 'resolveDepsTools',
-      noToolCalls: 'createSemanticQuery',
-    })
-    .addEdge('resolveDepsTools', 'resolveDependencies')
-    .addConditionalEdges('createSemanticQuery', skipPrebuiltRuleConditional, [
-      'matchPrebuiltRule',
-      'translationSubGraph',
-    ])
     .addConditionalEdges('matchPrebuiltRule', matchedPrebuiltRuleConditional, [
       'translationSubGraph',
       END,
@@ -77,22 +79,26 @@ export function getRuleMigrationAgent({
   return graph;
 }
 
-const skipPrebuiltRuleConditional = (_state: MigrateRuleState, config: MigrateRuleConfig) => {
+/**
+ * Router after generateSemanticQuery completes:
+ * - If skipPrebuiltRulesMatching is enabled, skip to translation
+ * - Otherwise, proceed to matchPrebuiltRule
+ */
+function skipPrebuiltRuleRouter(state: MigrateRuleState, config: MigrateRuleConfig): string {
   if (config.configurable?.skipPrebuiltRulesMatching) {
-    return 'translationSubGraph';
+    return 'skipPrebuiltRule';
   }
   return 'matchPrebuiltRule';
-};
+}
 
+/**
+ * Router after matchPrebuiltRule:
+ * - If prebuilt rule matched, end
+ * - Otherwise, proceed to translation
+ */
 const matchedPrebuiltRuleConditional = (state: MigrateRuleState) => {
   if (state.elastic_rule?.prebuilt_rule_id) {
     return END;
   }
   return 'translationSubGraph';
 };
-
-export function toolRouter(state: MigrateRuleState): string {
-  const messages = state.messages;
-  const lastMessage = messages.at(-1);
-  return lastMessage?.tool_calls?.length ? 'hasToolCalls' : 'noToolCalls';
-}
