@@ -21,6 +21,7 @@ import {
   SIEM_MIGRATION_TOOL_IDS,
   createStartMigrationTool,
   createListConnectorsTool,
+  createGetMigrationStatsTool,
 } from './tools';
 
 export const SIEM_MIGRATION_AGENT_ID = 'security.siem_migration';
@@ -62,6 +63,7 @@ export async function registerSiemMigrationTools({
     createUpdateMigrationRuleTool(getClient),
     createStartMigrationTool(getClient, core, logger),
     createListConnectorsTool(core),
+    createGetMigrationStatsTool(getClient),
   ];
 
   for (const tool of tools) {

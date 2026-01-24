@@ -36,6 +36,11 @@ import {
   SIEM_MIGRATION_LIST_CONNECTORS_TOOL_ID,
 } from './list_connectors';
 
+import {
+  createGetMigrationStatsTool,
+  SIEM_MIGRATION_GET_MIGRATION_STATS_TOOL_ID,
+} from './get_migration_stats';
+
 // All SIEM migration tool IDs for agent configuration
 export const SIEM_MIGRATION_TOOL_IDS = [
   SIEM_MIGRATION_GET_MIGRATIONS_TOOL_ID,
@@ -44,6 +49,7 @@ export const SIEM_MIGRATION_TOOL_IDS = [
   // SIEM_MIGRATION_INSTALL_RULES_TOOL_ID,
   SIEM_MIGRATION_START_MIGRATION_TOOL_ID,
   SIEM_MIGRATION_LIST_CONNECTORS_TOOL_ID,
+  SIEM_MIGRATION_GET_MIGRATION_STATS_TOOL_ID,
 ];
 
 export {
@@ -53,4 +59,5 @@ export {
   createInstallMigrationRulesTool,
   createStartMigrationTool,
   createListConnectorsTool,
+  createGetMigrationStatsTool,
 };

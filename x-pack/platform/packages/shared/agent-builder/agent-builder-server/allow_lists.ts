@@ -80,6 +80,7 @@ export const AGENT_BUILDER_BUILTIN_TOOLS = [
   `${internalNamespaces.security}.siem_migration.update_migration_rule`,
   `${internalNamespaces.security}.siem_migration.start_migration`,
   `${internalNamespaces.security}.siem_migration.list_connectors`,
+  `${internalNamespaces.security}.siem_migration.get_migration_stats`,
 
   // Streams
   `${internalNamespaces.streams}.inspect_streams`,

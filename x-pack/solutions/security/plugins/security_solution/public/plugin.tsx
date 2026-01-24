@@ -498,6 +498,8 @@ export class Plugin implements IPlugin<PluginSetup, PluginStart, SetupPlugins, S
         ]);
         return getCellRendererForGivenRecord(services, store);
       },
+
+      getAppWrapper: async () => { },
     };
     discoverFeatureRegistry.register(cellRendererFeature);
 

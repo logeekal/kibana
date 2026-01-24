@@ -40,11 +40,28 @@ export function createStartMigrationTool(
   return {
     id: SIEM_MIGRATION_START_MIGRATION_TOOL_ID,
     type: ToolType.builtin,
-    description:
-      'Start a SIEM migration task or retry migration for single or multiple rules. ' +
-      'When retry parameter is provided, it will mark matching rules (failed, not_fully_translated, or selected) as pending and then start the migration. ' +
-      'The connector_id is required to start the migration. ' +
-      'Use retry="failed" to retry all failed rules, retry="not_fully_translated" to retry partially translated rules, or retry="selected" with selection.ids to retry specific rules.',
+    description: `
+
+## Purpose
+Start a SIEM migration task or retry migration for single or multiple rules.
+      When retry parameter is provided, it will mark matching rules (failed, not_fully_translated, or selected) as pending and then start the migration.
+      The connector_id is required to start the migration.
+      Use retry="failed" to retry all failed rules, retry="not_fully_translated" to retry partially translated rules, or retry="selected" with selection.ids to retry specific rules.
+
+
+## Before starting migration
+
+Below points are extremely important to communicate to the user before starting the migration:
+
+- Always ask user which LLM connector they want to use before starting the migration. Never choose connector automatically.
+
+
+## After starting migration
+If the output is \`started: true\`, just tell the user that migration has started successfully and wait for it to complete before further actions.
+
+
+
+      `,
     schema: startMigrationSchema,
     tags: ['security', 'siem-migration'],
     handler: async (params, context) => {
@@ -69,8 +86,7 @@ export function createStartMigrationTool(
           connector = await actionsClient.get({ id: connector_id });
         } catch (error) {
           // Handle case where connector doesn't exist or user doesn't have permission
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
+          const errorMessage = error instanceof Error ? error.message : String(error);
           if (errorMessage.includes('not found') || errorMessage.includes('Saved object')) {
             return {
               results: [

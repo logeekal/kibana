@@ -61,7 +61,7 @@ export type SiemTaskRunnerConstructor<
   P extends object = {},
   C extends object = {},
   O extends object = {}
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 > = new (...params: any[]) => SiemMigrationTaskRunner<M, I, P, C, O>;
 
 export abstract class SiemMigrationTaskRunner<
@@ -104,7 +104,7 @@ export abstract class SiemMigrationTaskRunner<
   protected abstract processTaskOutput(item: Stored<I>, output: O): Stored<I>;
 
   /** Optional initialization logic */
-  public async initialize() {}
+  public async initialize() { }
 
   public async run(invocationConfig: RunnableConfig<C>): Promise<void> {
     assert(this.telemetry, 'telemetry is missing please call setup() first');
@@ -225,8 +225,7 @@ export abstract class SiemMigrationTaskRunner<
           retriesLeft--;
           const result = await invoke();
           this.logger.info(
-            `Rate limit backoff completed successfully after ${
-              RETRY_CONFIG.maxRetries - retriesLeft
+            `Rate limit backoff completed successfully after ${RETRY_CONFIG.maxRetries - retriesLeft
             } retries`
           );
           return result;
