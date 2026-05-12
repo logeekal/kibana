@@ -6,11 +6,12 @@
  */
 
 import type { CoreSetup, Logger } from '@kbn/core/server';
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server';
+import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-server';
 import type {
   SecuritySolutionPluginStartDependencies,
   SecuritySolutionPluginStart,
 } from '../../../../plugin_contract';
+import type { ExperimentalFeatures } from '../../../../../common';
 import type { SiemMigrationsService } from '../../siem_migrations_service';
 import { createSiemMigrationsClientFactory } from '../tools/create_client_factory';
 import { createMigrationRuleAttachmentType } from './migration_rule';
@@ -19,17 +20,20 @@ export async function registerSiemMigrationAttachments({
   agentBuilder,
   core,
   siemMigrationsService,
+  experimentalFeatures,
   logger,
 }: {
   agentBuilder: AgentBuilderPluginSetup;
   core: CoreSetup<SecuritySolutionPluginStartDependencies, SecuritySolutionPluginStart>;
   siemMigrationsService: SiemMigrationsService;
+  experimentalFeatures: ExperimentalFeatures;
   logger: Logger;
 }) {
   // Create client factory that attachments will use to get scoped clients
   const getClient = createSiemMigrationsClientFactory({
     core,
     siemMigrationsService,
+    experimentalFeatures,
   });
 
   // Register SIEM migration rule attachment type

@@ -762,6 +762,7 @@ export class Plugin implements ISecuritySolutionPlugin {
         agentBuilder: plugins.agentBuilder,
         core,
         siemMigrationsService: this.siemMigrationsService,
+        experimentalFeatures: config.experimentalFeatures,
         logger: this.logger.get('siemMigrationAgent'),
       }).catch((error) => {
         this.logger.error(`Error registering SIEM Migration Agent: ${error}`);
@@ -772,6 +773,7 @@ export class Plugin implements ISecuritySolutionPlugin {
         agentBuilder: plugins.agentBuilder,
         core,
         siemMigrationsService: this.siemMigrationsService,
+        experimentalFeatures: config.experimentalFeatures,
         logger: this.logger.get('siemMigrationAttachments'),
       }).catch((error) => {
         this.logger.error(`Error registering SIEM migration attachments: ${error}`);

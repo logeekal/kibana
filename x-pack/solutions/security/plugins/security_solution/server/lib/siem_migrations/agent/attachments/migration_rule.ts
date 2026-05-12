@@ -65,7 +65,15 @@ export function createMigrationRuleAttachmentType({
       return {
         getRepresentation: async () => {
           try {
-            const client = await getClient(context.request);
+            const [coreStart] = await core.getStartServices();
+            const esClient = coreStart.elasticsearch.client.asScoped(context.request);
+            const savedObjectsClient = coreStart.savedObjects.getScopedClient(context.request);
+            const client = await getClient({
+              request: context.request,
+              spaceId: context.spaceId,
+              esClient,
+              savedObjectsClient,
+            });
 
             const result = await client.data.items.get(migration_id, {
               filters: {
@@ -138,9 +146,14 @@ export function createMigrationRuleAttachmentType({
             type: ToolType.builtin,
             description: `Refresh or update details for migration rule ${rule_id} from migration ${migration_id}. Use this only if you need the latest data or if the initial attachment data is missing.`,
             schema: z.object({}),
-            handler: async (_args, context) => {
+            handler: async (_args, toolContext) => {
               try {
-                const client = await getClient(context.request);
+                const client = await getClient({
+                  request: toolContext.request,
+                  spaceId: toolContext.spaceId,
+                  esClient: toolContext.esClient,
+                  savedObjectsClient: toolContext.savedObjectsClient,
+                });
 
                 const result = await client.data.items.get(migration_id, {
                   filters: {

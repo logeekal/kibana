@@ -33,7 +33,12 @@ export function createGetMigrationsTool(
     tags: ['security', 'siem-migration'],
     handler: async (_params, context) => {
       try {
-        const client = await getClient(context.request);
+        const client = await getClient({
+          request: context.request,
+          spaceId: context.spaceId,
+          esClient: context.esClient,
+          savedObjectsClient: context.savedObjectsClient,
+        });
         const allStats = await client.task.getAllStats();
 
         // Format the response for better readability

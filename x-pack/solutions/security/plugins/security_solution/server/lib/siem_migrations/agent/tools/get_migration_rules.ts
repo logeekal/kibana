@@ -40,7 +40,12 @@ export function createGetMigrationRulesTool(
     tags: ['security', 'siem-migration'],
     handler: async (params, context) => {
       try {
-        const client = await getClient(context.request);
+        const client = await getClient({
+          request: context.request,
+          spaceId: context.spaceId,
+          esClient: context.esClient,
+          savedObjectsClient: context.savedObjectsClient,
+        });
 
         const options = {
           filters: {

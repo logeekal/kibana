@@ -74,7 +74,12 @@ If the output is \`started: true\`, just tell the user that migration has starte
           langsmith_options: langsmithOptions,
         } = params;
 
-        const client = await getClient(context.request);
+        const client = await getClient({
+          request: context.request,
+          spaceId: context.spaceId,
+          esClient: context.esClient,
+          savedObjectsClient: context.savedObjectsClient,
+        });
 
         // Get actions client to verify connector exists
         const [coreStart, plugins] = await core.getStartServices();

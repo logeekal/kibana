@@ -7,12 +7,13 @@
 
 import type { CoreSetup, Logger } from '@kbn/core/server';
 import { platformCoreTools } from '@kbn/agent-builder-common';
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server';
+import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-server';
 import type { SiemMigrationsService } from '../siem_migrations_service';
 import type {
   SecuritySolutionPluginStart,
   SecuritySolutionPluginStartDependencies,
 } from '../../../plugin_contract';
+import type { ExperimentalFeatures } from '../../../../common';
 import {
   createSiemMigrationsClientFactory,
   createGetMigrationsTool,
@@ -43,17 +44,20 @@ export async function registerSiemMigrationTools({
   agentBuilder,
   core,
   siemMigrationsService,
+  experimentalFeatures,
   logger,
 }: {
   agentBuilder: AgentBuilderPluginSetup;
   core: CoreSetup<SecuritySolutionPluginStartDependencies, SecuritySolutionPluginStart>;
   siemMigrationsService: SiemMigrationsService;
+  experimentalFeatures: ExperimentalFeatures;
   logger: Logger;
 }) {
   // Create client factory that tools will use to get scoped clients
   const getClient = createSiemMigrationsClientFactory({
     core,
     siemMigrationsService,
+    experimentalFeatures,
   });
 
   // Register SIEM migration tools
