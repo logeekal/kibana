@@ -8,7 +8,7 @@
 import { tags } from '@kbn/scout-oblt';
 import { expect } from '@kbn/scout-oblt/ui';
 import { test, testData } from '../../fixtures';
-import { EXTENDED_TIMEOUT } from '../../fixtures/constants';
+import { EXTENDED_TIMEOUT, PRODUCTION_ENVIRONMENT } from '../../fixtures/constants';
 
 test.describe(
   'Service Overview - Mobile Services',
@@ -25,6 +25,7 @@ test.describe(
       await serviceInventoryPage.gotoServiceInventory({
         rangeFrom: testData.START_DATE,
         rangeTo: testData.END_DATE,
+        environment: PRODUCTION_ENVIRONMENT,
       });
 
       await test.step('Click on android mobile service', async () => {
@@ -47,6 +48,7 @@ test.describe(
       await serviceInventoryPage.gotoServiceInventory({
         rangeFrom: testData.START_DATE,
         rangeTo: testData.END_DATE,
+        environment: PRODUCTION_ENVIRONMENT,
       });
 
       await test.step('Click on iOS mobile service', async () => {
@@ -82,6 +84,32 @@ test.describe(
 
       await test.step('Verify throughput chart is visible', async () => {
         await expect(serviceDetailsPage.overviewTab.throughputChart).toBeVisible();
+      });
+    });
+
+    test('mobile service overview header renders the environment filter', async ({
+      page,
+      pageObjects: { serviceDetailsPage },
+    }) => {
+      await serviceDetailsPage.goToMobileServiceOverview(testData.SERVICE_MOBILE_ANDROID, {
+        rangeFrom: testData.START_DATE,
+        rangeTo: testData.END_DATE,
+      });
+
+      await test.step('Verify the environment filter is visible in the header', async () => {
+        await expect(serviceDetailsPage.overviewTab.getEnvironmentFilter()).toBeVisible({
+          timeout: EXTENDED_TIMEOUT,
+        });
+      });
+
+      await test.step('Selecting an environment updates the environment query param', async () => {
+        await serviceDetailsPage.overviewTab.selectEnvironment(PRODUCTION_ENVIRONMENT);
+
+        await page.waitForURL(
+          (url) => url.searchParams.get('environment') === PRODUCTION_ENVIRONMENT,
+          { timeout: EXTENDED_TIMEOUT }
+        );
+        expect(page.url()).toContain(`environment=${PRODUCTION_ENVIRONMENT}`);
       });
     });
 

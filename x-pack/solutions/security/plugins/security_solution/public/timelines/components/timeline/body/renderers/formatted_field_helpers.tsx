@@ -10,8 +10,9 @@ import { EuiFlexGroup, EuiFlexItem, EuiIcon, EuiLink, EuiToolTip } from '@elasti
 import { isEmpty, isString } from 'lodash/fp';
 import type { SyntheticEvent } from 'react';
 import React, { useCallback, useContext, useMemo } from 'react';
-import styled from 'styled-components';
 import { useExpandableFlyoutApi } from '@kbn/expandable-flyout';
+import { useHistory } from 'react-router-dom';
+import { useStore } from 'react-redux';
 import { getEmptyTagValue } from '../../../../../common/components/empty_value';
 import { getRuleDetailsUrl } from '../../../../../common/components/link_to/redirect_to_detection_engine';
 import { TruncatableText } from '../../../../../common/components/truncatable_text';
@@ -20,17 +21,16 @@ import endPointSvg from '../../../../../common/utils/logo_endpoint/64_color.svg'
 import * as i18n from './translations';
 import { SecurityPageName } from '../../../../../app/types';
 import { useFormatUrl } from '../../../../../common/components/link_to';
-import { useKibana } from '../../../../../common/lib/kibana';
-import { APP_UI_ID } from '../../../../../../common/constants';
+import { useKibana, useUiSetting } from '../../../../../common/lib/kibana';
+import { APP_UI_ID, ENABLE_NEW_FLYOUT_SETTING } from '../../../../../../common/constants';
 import { LinkAnchor } from '../../../../../common/components/links';
 import { GenericLinkButton } from '../../../../../common/components/links/helpers';
 import { StatefulEventContext } from '../../../../../common/components/events_viewer/stateful_event_context';
 import { RulePanelKey } from '../../../../../flyout/rule_details/right';
 import { useUserPrivileges } from '../../../../../common/components/user_privileges';
-
-const EventModuleFlexItem = styled(EuiFlexItem)`
-  width: 100%;
-`;
+import { RuleDetails } from '../../../../../flyout_v2/rule/main';
+import { flyoutProviders } from '../../../../../flyout_v2/shared/components/flyout_provider';
+import { useDefaultDocumentFlyoutProperties } from '../../../../../flyout_v2/shared/hooks/use_default_flyout_properties';
 
 interface RenderRuleNameProps {
   children?: React.ReactNode;
@@ -58,12 +58,18 @@ export const RenderRuleName: React.FC<RenderRuleNameProps> = ({
   value,
 }) => {
   const { openFlyout } = useExpandableFlyoutApi();
+  const { services } = useKibana();
+  const { overlays, application } = services;
+  const store = useStore();
+  const history = useHistory();
   const eventContext = useContext(StatefulEventContext);
+  const enableNewFlyout = useUiSetting<boolean>(ENABLE_NEW_FLYOUT_SETTING, false);
+  const defaultDocumentFlyoutProperties = useDefaultDocumentFlyoutProperties();
 
   const ruleName = `${value}`;
   const ruleId = linkValue;
   const { search } = useFormatUrl(SecurityPageName.rules);
-  const { navigateToApp, getUrlForApp } = useKibana().services.application;
+  const { navigateToApp, getUrlForApp } = application;
   const canReadRules = useUserPrivileges().rulesPrivileges.rules.read;
 
   const isInTimelineContext =
@@ -82,6 +88,22 @@ export const RenderRuleName: React.FC<RenderRuleNameProps> = ({
         return;
       }
 
+      if (enableNewFlyout && ruleId) {
+        overlays.openSystemFlyout(
+          flyoutProviders({
+            services,
+            store,
+            history,
+            children: <RuleDetails ruleId={ruleId} />,
+          }),
+          {
+            ...defaultDocumentFlyoutProperties,
+            session: 'inherit',
+          }
+        );
+        return;
+      }
+
       openFlyout({
         right: {
           id: RulePanelKey,
@@ -91,7 +113,21 @@ export const RenderRuleName: React.FC<RenderRuleNameProps> = ({
         },
       });
     },
-    [navigateToApp, ruleId, search, openInNewTab, openFlyout, eventContext, isInTimelineContext]
+    [
+      navigateToApp,
+      ruleId,
+      search,
+      openInNewTab,
+      openFlyout,
+      eventContext,
+      isInTimelineContext,
+      enableNewFlyout,
+      overlays,
+      services,
+      store,
+      history,
+      defaultDocumentFlyoutProperties,
+    ]
   );
 
   const href = useMemo(
@@ -207,7 +243,7 @@ export const renderEventModule = ({
         endpointRefUrl != null && !isEmpty(endpointRefUrl) ? 'flexStart' : 'spaceBetween'
       }
     >
-      <EventModuleFlexItem>{content}</EventModuleFlexItem>
+      <EuiFlexItem css={{ width: '100%' }}>{content}</EuiFlexItem>
       {endpointRefUrl != null && canYouAddEndpointLogo(moduleName, endpointRefUrl) && (
         <EuiFlexItem grow={false}>
           <EuiToolTip
@@ -220,7 +256,7 @@ export const renderEventModule = ({
             }
           >
             <EuiLink href={endpointRefUrl} target="_blank">
-              <EuiIcon type={endPointSvg} size="m" />
+              <EuiIcon type={endPointSvg} size="m" aria-hidden={true} />
             </EuiLink>
           </EuiToolTip>
         </EuiFlexItem>

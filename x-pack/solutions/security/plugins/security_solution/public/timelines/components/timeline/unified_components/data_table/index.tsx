@@ -22,10 +22,9 @@ import type {
 import { useExpandableFlyoutApi } from '@kbn/expandable-flyout';
 import { useHistory } from 'react-router-dom';
 import { SECURITY_CELL_ACTIONS_DEFAULT } from '@kbn/ui-actions-plugin/common/trigger_ids';
-import { alertFlyoutHistoryKey } from '../../../../../flyout_v2/document/constants/flyout_history';
+import { documentFlyoutHistoryKey } from '../../../../../flyout_v2/shared/constants/flyout_history';
 import { cellActionRenderer } from '../../../../../flyout_v2/shared/components/cell_actions';
-import { useIsExperimentalFeatureEnabled } from '../../../../../common/hooks/use_experimental_features';
-import { JEST_ENVIRONMENT } from '../../../../../../common/constants';
+import { JEST_ENVIRONMENT, ENABLE_NEW_FLYOUT_SETTING } from '../../../../../../common/constants';
 import { useOnExpandableFlyoutClose } from '../../../../../flyout/shared/hooks/use_on_expandable_flyout_close';
 import { DocumentDetailsRightPanelKey } from '../../../../../flyout/document_details/shared/constants/panel_keys';
 import { AttackDetailsRightPanelKey } from '../../../../../flyout/attack_details/constants/panel_keys';
@@ -34,7 +33,7 @@ import { RowRendererCount } from '../../../../../../common/api/timeline';
 import { EmptyComponent } from '../../../../../common/lib/cell_actions/helpers';
 import { StatefulEventContext } from '../../../../../common/components/events_viewer/stateful_event_context';
 import type { TimelineItem } from '../../../../../../common/search_strategy';
-import { useKibana } from '../../../../../common/lib/kibana';
+import { useKibana, useUiSetting } from '../../../../../common/lib/kibana';
 import type {
   ColumnHeaderOptions,
   OnFetchMoreRecords,
@@ -57,7 +56,8 @@ import { TIMELINE_EVENT_DETAIL_ROW_ID } from '../../body/constants';
 import { DocumentEventTypes } from '../../../../../common/lib/telemetry/types';
 import { getTimelineRowTypeIndicator } from './get_row_indicator';
 import { isAttackDiscoveryRow } from './is_attack_discovery_row';
-import { DocumentFlyoutWrapper } from '../../../../../flyout_v2/document/document_flyout_wrapper';
+import { DocumentFlyoutWrapper } from '../../../../../flyout_v2/document/main/document_flyout_wrapper';
+import { AttackFlyoutWrapper } from '../../../../../flyout_v2/attack/main/attack_flyout_wrapper';
 import { flyoutProviders } from '../../../../../flyout_v2/shared/components/flyout_provider';
 import { useDefaultDocumentFlyoutProperties } from '../../../../../flyout_v2/shared/hooks/use_default_flyout_properties';
 
@@ -122,7 +122,6 @@ export const TimelineDataTableComponent: React.FC<DataTableProps> = memo(
     leadingControlColumns,
     onUpdatePageIndex,
   }) {
-    const newFlyoutSystemEnabled = useIsExperimentalFeatureEnabled('newFlyoutSystemEnabled');
     const dispatch = useDispatch();
     const store = useStore();
     const history = useHistory();
@@ -148,6 +147,8 @@ export const TimelineDataTableComponent: React.FC<DataTableProps> = memo(
       data: dataPluginContract,
       overlays,
     } = services;
+
+    const enableNewFlyout = useUiSetting<boolean>(ENABLE_NEW_FLYOUT_SETTING, false);
 
     const [expandedDoc, setExpandedDoc] = useState<DataTableRecord & TimelineItem>();
 
@@ -187,13 +188,20 @@ export const TimelineDataTableComponent: React.FC<DataTableProps> = memo(
 
     const handleOnEventDetailPanelOpened = useCallback(
       (eventData: DataTableRecord & TimelineItem) => {
-        if (newFlyoutSystemEnabled) {
+        if (enableNewFlyout) {
+          const isAttackRow = isAttackDiscoveryRow(eventData);
           overlays.openSystemFlyout(
             flyoutProviders({
               services,
               store,
               history,
-              children: (
+              children: isAttackRow ? (
+                <AttackFlyoutWrapper
+                  attackId={eventData._id}
+                  indexName={eventData.ecs._index ?? ''}
+                  onAttackUpdated={refetch}
+                />
+              ) : (
                 <DocumentFlyoutWrapper
                   documentId={eventData._id}
                   indexName={eventData.ecs._index}
@@ -204,7 +212,7 @@ export const TimelineDataTableComponent: React.FC<DataTableProps> = memo(
             }),
             {
               ...defaultFlyoutProperties,
-              historyKey: alertFlyoutHistoryKey,
+              historyKey: documentFlyoutHistoryKey,
               session: 'start',
             }
           );
@@ -238,7 +246,7 @@ export const TimelineDataTableComponent: React.FC<DataTableProps> = memo(
       },
       [
         defaultFlyoutProperties,
-        newFlyoutSystemEnabled,
+        enableNewFlyout,
         overlays,
         services,
         store,

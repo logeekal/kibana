@@ -18,6 +18,10 @@ import { compact } from 'lodash';
 import type { EntityDetailsHighlightsResponse } from '../../../common/api/entity_analytics/entity_details/highlights.gen';
 import { ENTITY_DETAILS_HIGHLIGHT_INTERNAL_URL } from '../../../common/entity_analytics/entity_analytics/constants';
 import type {
+  AnomalyOverviewRequestBody,
+  AnomalyOverviewResponse,
+  AnomalySummaryRequestBody,
+  AnomalySummaryResponse,
   AssetCriticalityRecord,
   ConfigureRiskEngineSavedObjectRequestBodyInput,
   CreateEntitySourceResponse,
@@ -40,6 +44,8 @@ import type {
   ReadRiskEngineSettingsResponse,
   RiskEngineScheduleNowResponse,
   RiskEngineStatusResponse,
+  RiskScoreHistoryEntry,
+  RiskScoreHistoryResponse,
   RiskScoresEntityCalculationRequest,
   RiskScoresEntityCalculationResponse,
   RiskScoresPreviewRequest,
@@ -90,13 +96,20 @@ import {
   RISK_ENGINE_SETTINGS_URL,
   RISK_ENGINE_STATUS_URL,
   RISK_SCORE_ENTITY_CALCULATION_URL,
+  RISK_SCORE_ENTITY_CALCULATION_V2_URL,
   RISK_SCORE_PREVIEW_URL,
+  ENTITY_ANOMALY_OVERVIEW_INTERNAL_URL,
+  ENTITY_ANOMALY_PRIVILEGES_INTERNAL_URL,
+  ENTITY_ANOMALY_SUMMARY_INTERNAL_URL,
 } from '../../../common/constants';
 import {
   WATCHLISTS_URL,
   WATCHLISTS_INDICES_URL,
   WATCHLISTS_CSV_UPLOAD_URL,
+  WATCHLISTS_PRIVILEGES_URL,
 } from '../../../common/entity_analytics/watchlists/constants';
+import { RISK_SCORE_HISTORY_URL } from '../../../common/entity_analytics/risk_score/constants';
+import type { EntityType } from '../../../common/entity_analytics/types';
 import type { UploadWatchlistCsvResponse } from '../../../common/api/entity_analytics/watchlists/csv_upload/csv_upload.gen';
 import {
   GENERATE_LEADS_URL,
@@ -106,6 +119,7 @@ import {
   BULK_UPDATE_LEADS_URL,
   ENABLE_LEAD_GENERATION_URL,
   DISABLE_LEAD_GENERATION_URL,
+  LEAD_GENERATION_PRIVILEGES_URL,
 } from '../../../common/entity_analytics/lead_generation/constants';
 import type {
   FindLeadsResponse,
@@ -135,7 +149,7 @@ const getMaintainerRouteWithId = (route: string, id: string): string =>
 export const useEntityAnalyticsRoutes = () => {
   const { http, uiSettings } = useKibana().services;
   const isEntityStoreV2UiSettingEnabled =
-    uiSettings?.get<boolean>(FF_ENABLE_ENTITY_STORE_V2, false) ?? false;
+    uiSettings?.get<boolean>(FF_ENABLE_ENTITY_STORE_V2) ?? false;
   const isEntityAnalyticsEntityStoreV2Enabled = useIsExperimentalFeatureEnabled(
     'entityAnalyticsEntityStoreV2'
   );
@@ -176,6 +190,31 @@ export const useEntityAnalyticsRoutes = () => {
         version: '1',
         method: 'POST',
         body: JSON.stringify(params),
+        signal,
+      });
+
+    /**
+     * Fetches historical risk score entries for an entity
+     */
+    const fetchRiskScoreHistory = ({
+      signal,
+      params,
+    }: {
+      signal?: AbortSignal;
+      params: FetchRiskScoreHistoryParams;
+    }) =>
+      http.fetch<RiskScoreHistoryResponse>(RISK_SCORE_HISTORY_URL, {
+        version: API_VERSIONS.public.v1,
+        method: 'GET',
+        query: {
+          entity_type: params.entityType,
+          entity_id: params.entityId,
+          from: params.from,
+          to: params.to,
+          score_type: params.scoreType,
+          page_size: params.pageSize,
+          include_contributions: params.includeContributions,
+        },
         signal,
       });
 
@@ -373,6 +412,14 @@ export const useEntityAnalyticsRoutes = () => {
      */
     const calculateEntityRiskScore = (params: RiskScoresEntityCalculationRequest) => {
       return http.fetch<RiskScoresEntityCalculationResponse>(RISK_SCORE_ENTITY_CALCULATION_URL, {
+        version: '1',
+        method: 'POST',
+        body: JSON.stringify(params),
+      });
+    };
+
+    const calculateEntityRiskScoreV2 = (params: RiskScoresEntityCalculationRequest) => {
+      return http.fetch<RiskScoresEntityCalculationResponse>(RISK_SCORE_ENTITY_CALCULATION_V2_URL, {
         version: '1',
         method: 'POST',
         body: JSON.stringify(params),
@@ -662,10 +709,8 @@ export const useEntityAnalyticsRoutes = () => {
         method: 'GET',
       });
 
-    // TODO: switch to WATCHLISTS privileges API when backend route lands; https://github.com/elastic/security-team/issues/16102
-    // Keeping this separate from privmon to allow safe removal of privmon later.
-    const fetchWatchlistPrivileges = (): Promise<PrivMonPrivilegesResponse> =>
-      http.fetch<PrivMonPrivilegesResponse>(PRIVMON_PRIVILEGE_CHECK_API, {
+    const fetchWatchlistsPrivileges = (): Promise<EntityAnalyticsPrivileges> =>
+      http.fetch<EntityAnalyticsPrivileges>(WATCHLISTS_PRIVILEGES_URL, {
         version: API_VERSIONS.public.v1,
         method: 'GET',
       });
@@ -793,6 +838,15 @@ export const useEntityAnalyticsRoutes = () => {
         }
       );
 
+    const deleteWatchlistEntitySource = async (params: {
+      watchlistId: string;
+      entitySourceId: string;
+    }) =>
+      http.fetch(`${WATCHLISTS_URL}/${params.watchlistId}/entity_source/${params.entitySourceId}`, {
+        version: API_VERSIONS.public.v1,
+        method: 'DELETE',
+      });
+
     const searchWatchlistIndices = async (params: {
       query: string | undefined;
       signal?: AbortSignal;
@@ -857,12 +911,12 @@ export const useEntityAnalyticsRoutes = () => {
       params,
     }: {
       signal?: AbortSignal;
-      params?: { maxLeads?: number };
+      params: { connectorId: string; maxLeads?: number };
     }) =>
       http.fetch<GenerateLeadsResponse>(GENERATE_LEADS_URL, {
         version: API_VERSIONS.internal.v1,
         method: 'POST',
-        body: JSON.stringify(params ?? {}),
+        body: JSON.stringify(params),
         signal,
       });
 
@@ -887,10 +941,11 @@ export const useEntityAnalyticsRoutes = () => {
         signal,
       });
 
-    const enableLeadGeneration = () =>
+    const enableLeadGeneration = ({ connectorId }: { connectorId: string }) =>
       http.fetch<{ success: boolean }>(ENABLE_LEAD_GENERATION_URL, {
         version: API_VERSIONS.internal.v1,
         method: 'POST',
+        body: JSON.stringify({ connectorId }),
       });
 
     const disableLeadGeneration = () =>
@@ -899,8 +954,69 @@ export const useEntityAnalyticsRoutes = () => {
         method: 'POST',
       });
 
+    const fetchLeadGenerationPrivileges = () =>
+      http.fetch<EntityAnalyticsPrivileges>(LEAD_GENERATION_PRIVILEGES_URL, {
+        version: API_VERSIONS.internal.v1,
+        method: 'GET',
+      });
+
+    const fetchAnomalyPrivileges = () =>
+      http.fetch<EntityAnalyticsPrivileges>(ENTITY_ANOMALY_PRIVILEGES_INTERNAL_URL, {
+        version: API_VERSIONS.internal.v1,
+        method: 'GET',
+      });
+
+    const fetchAnomalySummary = ({
+      entityType,
+      entityId,
+      body,
+      signal,
+    }: {
+      entityType: string;
+      entityId: string;
+      body?: AnomalySummaryRequestBody;
+      signal?: AbortSignal;
+    }) =>
+      http.fetch<AnomalySummaryResponse>(
+        ENTITY_ANOMALY_SUMMARY_INTERNAL_URL.replace(
+          '{entity_type}',
+          encodeURIComponent(entityType)
+        ).replace('{entity_id}', encodeURIComponent(entityId)),
+        {
+          version: API_VERSIONS.internal.v1,
+          method: 'POST',
+          body: JSON.stringify(body ?? {}),
+          signal,
+        }
+      );
+
+    const fetchAnomalyOverview = ({
+      entityType,
+      entityId,
+      body,
+      signal,
+    }: {
+      entityType: string;
+      entityId: string;
+      body?: AnomalyOverviewRequestBody;
+      signal?: AbortSignal;
+    }) =>
+      http.fetch<AnomalyOverviewResponse>(
+        ENTITY_ANOMALY_OVERVIEW_INTERNAL_URL.replace(
+          '{entity_type}',
+          encodeURIComponent(entityType)
+        ).replace('{entity_id}', encodeURIComponent(entityId)),
+        {
+          version: API_VERSIONS.internal.v1,
+          method: 'POST',
+          body: JSON.stringify(body ?? {}),
+          signal,
+        }
+      );
+
     return {
       fetchRiskScorePreview,
+      fetchRiskScoreHistory,
       fetchRiskEngineStatus,
       initRiskEngine,
       enableRiskEngine,
@@ -923,7 +1039,7 @@ export const useEntityAnalyticsRoutes = () => {
       updatePrivMonMonitoredIndices,
       fetchPrivilegeMonitoringEngineStatus,
       fetchPrivilegeMonitoringPrivileges,
-      fetchWatchlistPrivileges,
+      fetchWatchlistsPrivileges,
       createWatchlist,
       getWatchlist,
       updateWatchlist,
@@ -931,10 +1047,12 @@ export const useEntityAnalyticsRoutes = () => {
       listWatchlistEntitySources,
       updateWatchlistEntitySource,
       createWatchlistEntitySource,
+      deleteWatchlistEntitySource,
       searchWatchlistIndices,
       uploadWatchlistCsv,
       fetchRiskEngineSettings,
       calculateEntityRiskScore,
+      calculateEntityRiskScoreV2,
       cleanUpRiskEngine,
       fetchEntitiesList,
       fetchEntitiesListV2,
@@ -949,6 +1067,10 @@ export const useEntityAnalyticsRoutes = () => {
       bulkUpdateLeads,
       enableLeadGeneration,
       disableLeadGeneration,
+      fetchLeadGenerationPrivileges,
+      fetchAnomalyPrivileges,
+      fetchAnomalyOverview,
+      fetchAnomalySummary,
     };
   }, [
     http,
@@ -961,3 +1083,13 @@ export const useEntityAnalyticsRoutes = () => {
 export type AssetCriticality = SnakeToCamelCase<AssetCriticalityRecord>;
 
 export type FetchEntitiesListParams = SnakeToCamelCase<ListEntitiesRequestQuery>;
+
+export interface FetchRiskScoreHistoryParams {
+  entityType: EntityType;
+  entityId: string;
+  from?: string;
+  to?: string;
+  scoreType?: RiskScoreHistoryEntry['score_type'];
+  pageSize?: number;
+  includeContributions?: boolean;
+}
