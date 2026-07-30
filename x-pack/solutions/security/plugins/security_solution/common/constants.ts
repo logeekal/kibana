@@ -749,6 +749,7 @@ export enum SecurityAgentBuilderAttachments {
   entityAnalyticsDashboard = 'security.entity_analytics_dashboard',
   rule = 'security.rule',
   rulePreview = 'security.rule.preview',
+  siemMigrationRule = 'security.siem_migration.rule',
 }
 
 export const SECURITY_RULE_ATTACHMENT_ID = 'ai-rule-creation';
@@ -757,6 +758,7 @@ export const REGISTER_ALERT_VALIDATION_STEPS_FEATURE_FLAG =
   'securitySolution.registerAlertValidationStepsEnabled' as const;
 export const REGISTER_ALERT_VALIDATION_STEP_FEATURE_FLAG_DEFAULT = false as const;
 
-export const SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID = 'security.siem_migration.rule' as const;
+export const SIEM_MIGRATION_RULE_ATTACHMENT_TYPE_ID =
+  SecurityAgentBuilderAttachments.siemMigrationRule;
 
 export const THREAT_HUNTING_AGENT_ID = `${internalNamespaces.security}.agent`;

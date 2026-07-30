@@ -288,6 +288,7 @@ export const AGENT_BUILDER_BUILTIN_ATTACHMENTS = [
   'security.entity_analytics_dashboard',
   'security.rule',
   'security.siem_readiness',
+  'security.siem_migration.rule',
   // gated behind experimentalFeatures.rulePreviewAttachmentEnabled
   'security.rule.preview',
 

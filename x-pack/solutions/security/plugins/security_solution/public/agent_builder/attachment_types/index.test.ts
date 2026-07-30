@@ -51,6 +51,24 @@ describe('registerAttachmentUiDefinitions', () => {
     expect(config.getLabel(attachment)).toBe('Security Alert');
   });
 
+  it('registers the SIEM migration rule attachment type', () => {
+    registerAttachmentUiDefinitions(mockAttachments);
+
+    const migrationRuleCall = mockAddAttachmentType.mock.calls.find(
+      (call: unknown[]) => call[0] === SecurityAgentBuilderAttachments.siemMigrationRule
+    );
+    const config = migrationRuleCall![1];
+
+    const attachment = {
+      id: 'test',
+      type: SecurityAgentBuilderAttachments.siemMigrationRule,
+      data: { attachmentLabel: 'Migration Rule: Suspicious PowerShell' },
+    };
+
+    expect(config.getLabel(attachment)).toBe('Migration Rule: Suspicious PowerShell');
+    expect(config.getIcon()).toBe('document');
+  });
+
   it('does not register the security.entity attachment type (owned by registerEntityAttachment)', () => {
     registerAttachmentUiDefinitions(mockAttachments);
 

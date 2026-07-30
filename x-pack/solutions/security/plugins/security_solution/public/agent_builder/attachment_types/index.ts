@@ -51,6 +51,14 @@ const ALERTS_DEFAULT_LABEL = i18n.translate(
   { defaultMessage: 'Security alerts' }
 );
 
+const SIEM_MIGRATION_RULE_ATTACHMENT_CONFIG: AttachmentTypeConfig = {
+  type: SecurityAgentBuilderAttachments.siemMigrationRule,
+  label: i18n.translate('xpack.securitySolution.agentBuilder.attachments.siemMigrationRule.label', {
+    defaultMessage: 'SIEM migration rule',
+  }),
+  icon: 'document',
+};
+
 const createAttachmentTypeConfig = (defaultLabel: string, icon: string) => ({
   getLabel: (attachment: UnknownAttachmentWithLabel) => {
     const attachmentLabel = attachment?.data?.attachmentLabel;
@@ -88,6 +96,14 @@ export const registerAttachmentUiDefinitions = (attachments: AttachmentServiceSt
       },
       getIcon: () => 'bell',
     }
+  );
+
+  attachments.addAttachmentType<UnknownAttachmentWithLabel>(
+    SIEM_MIGRATION_RULE_ATTACHMENT_CONFIG.type,
+    createAttachmentTypeConfig(
+      SIEM_MIGRATION_RULE_ATTACHMENT_CONFIG.label,
+      SIEM_MIGRATION_RULE_ATTACHMENT_CONFIG.icon
+    )
   );
 };
 
