@@ -35,6 +35,14 @@ jest.mock('./eslint/run_eslint_contract', () => ({
   executeEslintValidation: jest.fn(),
 }));
 
+jest.mock('./yaml_lint/lint_yaml_files', () => ({
+  formatYamlLintErrors: jest.fn(() => 'YAML lint failed'),
+}));
+
+jest.mock('./yaml_lint/run_yaml_lint_contract', () => ({
+  executeYamlLintValidation: jest.fn(),
+}));
+
 jest.mock('@kbn/dev-proc-runner', () => ({
   ProcRunner: jest.fn().mockImplementation(() => ({
     teardown: jest.fn(),
@@ -84,6 +92,8 @@ const mockExecuteTypeCheckValidation = jest.requireMock('./type_check_validation
   .executeTypeCheckValidation as jest.Mock;
 const mockExecuteEslintValidation = jest.requireMock('./eslint/run_eslint_contract')
   .executeEslintValidation as jest.Mock;
+const mockExecuteYamlLintValidation = jest.requireMock('./yaml_lint/run_yaml_lint_contract')
+  .executeYamlLintValidation as jest.Mock;
 const mockExistsSync = jest.requireMock('fs').existsSync as jest.Mock;
 const mockReaddirSync = jest.requireMock('fs').readdirSync as jest.Mock;
 const mockExeca = mockExecaFn;
@@ -159,6 +169,13 @@ describe('run_check', () => {
       fixedFiles: [],
       failedFiles: [],
       warningCount: 0,
+    });
+    mockExecuteYamlLintValidation.mockResolvedValue({
+      checkedFiles: [],
+      excludedFiles: [],
+      fixedFiles: [],
+      errors: [],
+      warnings: [],
     });
     mockExecuteTypeCheckValidation.mockResolvedValue({ projectCount: 2 });
     mockExeca.mockResolvedValue({
@@ -663,6 +680,35 @@ describe('run_check', () => {
       const output = stdoutSpy.mock.calls.map(([text]: [string]) => text).join('');
       expect(output).toContain('moon  ✗ failed');
       expect(output).toContain('node scripts/regenerate_moon_projects.js --update');
+    });
+  });
+
+  describe('YAML step', () => {
+    it('never enables YAML autofix through scripts/check', async () => {
+      await handler(createArgs({ fix: true }));
+
+      expect(mockExecuteYamlLintValidation).toHaveBeenCalledWith({
+        baseContext,
+        checkStyle: true,
+        fix: false,
+      });
+    });
+
+    it('reports YAML validation failures', async () => {
+      mockExecuteYamlLintValidation.mockResolvedValue({
+        checkedFiles: ['config/example.yml'],
+        excludedFiles: [],
+        fixedFiles: [],
+        errors: [{ filePath: 'config/example.yml', kind: 'syntax', message: 'invalid' }],
+        warnings: [],
+      });
+
+      await handler(createArgs());
+
+      expect(process.exitCode).toBe(1);
+      const output = stdoutSpy.mock.calls.map(([text]: [string]) => text).join('');
+      expect(output).toContain('yaml  ✗ failed');
+      expect(output).toContain('YAML lint failed');
     });
   });
 });

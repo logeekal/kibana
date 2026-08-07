@@ -39,6 +39,8 @@ import {
 import { executeTypeCheckValidation } from './type_check_validation_loader';
 
 import { executeEslintValidation } from './eslint/run_eslint_contract';
+import { formatYamlLintErrors } from './yaml_lint/lint_yaml_files';
+import { executeYamlLintValidation } from './yaml_lint/run_yaml_lint_contract';
 
 // ── Output helpers ──────────────────────────────────────────────────────────
 
@@ -283,7 +285,7 @@ run(
         baseContext.runContext.kind === 'full' ||
         baseContext.contract.testMode === 'all');
 
-    // Steps run in a fixed order: tsproj → moon → lint → jest → tsc.
+    // Steps run in a fixed order: tsproj → moon → yaml → lint → jest → tsc.
     // @kbn/ts-projects is cached for the process; tsproj autofixes tsconfigs in a
     // subprocess, so lint/tsc must not load TS_PROJECTS until those fixes are on disk.
     // Do not reorder or add top-level imports that pull in @kbn/ts-projects earlier.
@@ -371,6 +373,46 @@ run(
         }
       } catch (error) {
         moonProgress.writeResult(line('moon', '✗', 'failed', moonProgress.elapsed()));
+        errors.push(error instanceof Error ? error : new Error(String(error)));
+      }
+    }
+
+    // ── YAML ───────────────────────────────────────────────────────────
+
+    {
+      const progress = startProgress('yaml');
+      try {
+        // scripts/check may default to fixing other tools. YAML formatting is
+        // deliberately check-only here because it can rewrite an entire file.
+        const result = await executeYamlLintValidation({
+          baseContext,
+          checkStyle: true,
+          fix: false,
+        });
+        if (result.checkedFiles.length === 0) {
+          progress.writeResult(line('yaml', '—', 'no files changed', progress.elapsed()));
+        } else if (result.errors.length > 0) {
+          progress.writeResult(line('yaml', '✗', 'failed', progress.elapsed()));
+          writeln('');
+          for (const outputLine of formatYamlLintErrors(result.errors).split('\n')) {
+            writeln(`    ${outputLine}`);
+          }
+          writeln('');
+          errors.push(new Error('YAML lint failed'));
+        } else {
+          const warningSuffix =
+            result.warnings.length > 0 ? ` (${pluralize(result.warnings.length, 'warning')})` : '';
+          progress.writeResult(
+            line(
+              'yaml',
+              result.warnings.length > 0 ? '⚠' : '✓',
+              `${pluralize(result.checkedFiles.length, 'file')}${warningSuffix}`,
+              progress.elapsed()
+            )
+          );
+        }
+      } catch (error) {
+        progress.writeResult(line('yaml', '✗', 'failed', progress.elapsed()));
         errors.push(error instanceof Error ? error : new Error(String(error)));
       }
     }

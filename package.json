@@ -52,6 +52,7 @@
     "lint:es": "node scripts/eslint_all_files",
     "lint:oxc": "node scripts/lint",
     "lint:style": "node scripts/stylelint",
+    "lint:yaml": "node scripts/yaml_lint --scope full",
     "makelogs": "node scripts/makelogs",
     "quick-checks": "node scripts/quick_checks",
     "serverless": "node scripts/kibana --dev --serverless",

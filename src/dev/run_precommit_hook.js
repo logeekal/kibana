@@ -14,12 +14,10 @@ import { createFlagError } from '@kbn/dev-cli-errors';
 import { REPO_ROOT } from '@kbn/repo-info';
 import * as Eslint from './eslint';
 import * as Stylelint from './stylelint';
-import { extname } from 'path';
 
 import { getFilesForCommit, runFileCasingCheck } from './precommit_hook';
 import { checkSemverRanges } from './no_pkg_semver_ranges';
-import { parseAllDocuments as yamlParseAllDocuments } from 'yaml';
-import { readFile } from 'fs/promises';
+import { formatYamlLintErrors, lintYamlFiles } from './yaml_lint/lint_yaml_files';
 
 class CheckResult {
   constructor(checkName) {
@@ -106,37 +104,29 @@ class YamlLintCheck extends PrecommitCheck {
     super('YAML Lint');
   }
 
-  isYamlFile(filePath) {
-    const ext = extname(filePath).toLowerCase();
-    return ext === '.yml' || ext === '.yaml';
-  }
+  async execute(log, files, options) {
+    const result = await lintYamlFiles(
+      files.map((file) => file.getRelativePath()),
+      { fix: options.fix }
+    );
 
-  async execute(log, files) {
-    const yamlFiles = files.filter((file) => this.isYamlFile(file.getRelativePath()));
-
-    if (yamlFiles.length === 0) {
+    if (result.checkedFiles.length === 0) {
       log.verbose('No YAML files to check');
       return;
     }
 
-    log.verbose(`Checking ${yamlFiles.length} YAML files for syntax errors`);
-
-    const errors = [];
-    for (const file of yamlFiles) {
-      try {
-        const content = await readFile(file.getAbsolutePath(), 'utf8');
-        const docs = yamlParseAllDocuments(content);
-        const parseErrors = docs.flatMap((doc) => doc.errors);
-        if (parseErrors.length > 0) {
-          throw new Error(parseErrors.map((e) => e.message).join('\n'));
-        }
-      } catch (error) {
-        errors.push(`Error in ${file.getRelativePath()}:\n${error.message}`);
-      }
+    log.verbose(`Checking ${result.checkedFiles.length} YAML files`);
+    for (const warning of result.warnings) {
+      log.warning(`${warning.filePath}:\n${warning.message}`);
     }
 
-    if (errors.length > 0) {
-      throw new Error(errors.join('\n\n'));
+    if (options.fix && options.stage && result.fixedFiles.length > 0) {
+      const simpleGit = new SimpleGit(REPO_ROOT);
+      await simpleGit.add(result.fixedFiles);
+    }
+
+    if (result.errors.length > 0) {
+      throw new Error(formatYamlLintErrors(result.errors));
     }
   }
 }
