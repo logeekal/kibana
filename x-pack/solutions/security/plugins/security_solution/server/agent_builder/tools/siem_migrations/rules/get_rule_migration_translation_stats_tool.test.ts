@@ -7,6 +7,7 @@
 
 import { ToolResultType } from '@kbn/agent-builder-common';
 import type { ToolHandlerStandardReturn } from '@kbn/agent-builder-server/tools';
+import { securityMock } from '@kbn/security-plugin/server/mocks';
 import {
   createToolTestMocks,
   createToolHandlerContext,
@@ -27,11 +28,23 @@ describe('getRuleMigrationTranslationStatsTool', () => {
     mockProductFeaturesService
   );
   let mockFetch: jest.Mock;
+  let checkPrivileges: jest.Mock;
 
   beforeEach(() => {
     jest.clearAllMocks();
     const mockCoreStart = setupMockCoreStartServices(mockCore, mockEsClient);
+    const mockSecurityStart = securityMock.createStart();
     mockFetch = jest.fn();
+    checkPrivileges = jest.fn().mockResolvedValue({ hasAllRequested: true });
+    jest
+      .mocked(mockSecurityStart.authz.actions.api.get)
+      .mockImplementation((privilege) => `api:${privilege}`);
+    mockSecurityStart.authz.checkPrivilegesDynamicallyWithRequest.mockReturnValue(checkPrivileges);
+    mockCore.getStartServices.mockResolvedValue([
+      mockCoreStart,
+      { security: mockSecurityStart } as never,
+      {},
+    ]);
     (mockCoreStart.http.selfClient.asScoped as unknown as jest.Mock).mockReturnValue({
       fetch: mockFetch,
     });

@@ -7,6 +7,9 @@
 
 import { ToolResultType } from '@kbn/agent-builder-common';
 import type { ToolHandlerStandardReturn } from '@kbn/agent-builder-server/tools';
+import { SIEM_MIGRATIONS_API_ACTION_ALL } from '@kbn/security-solution-features/actions';
+import { RULES_API_READ } from '@kbn/security-solution-features/constants';
+import { securityMock } from '@kbn/security-plugin/server/mocks';
 import { createToolTestMocks, createToolHandlerContext } from '../../../__mocks__/test_helpers';
 import { coreMock } from '@kbn/core/server/mocks';
 import type { ProductFeaturesService } from '../../../../lib/product_features_service/product_features_service';
@@ -21,6 +24,7 @@ describe('startRuleMigrationTool', () => {
   let mockCore: ReturnType<typeof coreMock.createSetup>;
   let mockFetch: jest.Mock;
   let checkPrivileges: jest.Mock;
+  let mockSecurityStart: ReturnType<typeof securityMock.createStart>;
 
   const tool = () => startRuleMigrationTool(mockCore, mockLogger, mockProductFeaturesService);
 
@@ -29,6 +33,11 @@ describe('startRuleMigrationTool', () => {
     mockCore = coreMock.createSetup();
     mockFetch = jest.fn();
     checkPrivileges = jest.fn();
+    mockSecurityStart = securityMock.createStart();
+    jest
+      .mocked(mockSecurityStart.authz.actions.api.get)
+      .mockImplementation((privilege) => `api:${privilege}`);
+    mockSecurityStart.authz.checkPrivilegesDynamicallyWithRequest.mockReturnValue(checkPrivileges);
     const mockCoreStart = coreMock.createStart();
     (mockCoreStart.http.selfClient.asScoped as unknown as jest.Mock).mockReturnValue({
       fetch: mockFetch,
@@ -37,12 +46,7 @@ describe('startRuleMigrationTool', () => {
     mockCore.getStartServices.mockResolvedValue([
       mockCoreStart,
       {
-        security: {
-          authz: {
-            checkPrivilegesDynamicallyWithRequest: () => checkPrivileges,
-            actions: { ui: { get: (feature: string, priv: string) => `${feature}.${priv}` } },
-          },
-        },
+        security: mockSecurityStart,
       } as never,
       {},
     ]);
@@ -64,8 +68,12 @@ describe('startRuleMigrationTool', () => {
       createToolHandlerContext(mockRequest, mockEsClient, mockLogger)
     )) as ToolHandlerStandardReturn;
 
+    expect(mockSecurityStart.authz.actions.api.get).toHaveBeenCalledWith(
+      SIEM_MIGRATIONS_API_ACTION_ALL
+    );
+    expect(mockSecurityStart.authz.actions.api.get).toHaveBeenCalledWith(RULES_API_READ);
     expect(checkPrivileges).toHaveBeenCalledWith({
-      kibana: ['securitySolutionSiemMigrations.all'],
+      kibana: [`api:${SIEM_MIGRATIONS_API_ACTION_ALL}`, `api:${RULES_API_READ}`],
     });
     expect(mockFetch).toHaveBeenCalledWith(
       '/internal/siem_migrations/rules/abc/start',
